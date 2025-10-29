@@ -1,0 +1,27 @@
+# Ignore environment variables
+
+.env
+.env.local
+.env.\*.local
+
+# Ignore Composer vendor directory (dependencies)
+
+vendor/
+
+# Ignore IDE/editor files
+
+.idea/
+_.sublime-project
+_.sublime-workspace
+\*.vscode/
+
+# Ignore OS-specific files
+
+.DS_Store
+Thumbs.db
+
+# Ignore logs and cache
+
+\*.log
+cache/
+tmp/

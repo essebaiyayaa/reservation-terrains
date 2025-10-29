@@ -1,0 +1,11 @@
+# Enable the rewrite engine
+RewriteEngine On
+
+# Verify whether the requested resource is not a directory
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Verify whether  the requested resource is not a file
+RewriteCond %{REQUEST_FILENAME} !-f
+
+# Rewrite all other requests to index.php, appending query string parameters and marking this as the last rule
+RewriteRule ^(.+)$ index.php?url=$1 [QSA,L]
