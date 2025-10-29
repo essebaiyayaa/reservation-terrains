@@ -51,6 +51,7 @@ abstract class BaseController
      * 
      * 
      * @param string $id The unique identifier of the resource to edit.
+     * 
      * @return void
      */
     abstract protected function edit(string $id): void;
@@ -69,9 +70,9 @@ abstract class BaseController
      * Dynamically loads a model class.
      * 
      * @param string $model The name of the model class to load.
-     * @return object       An instance of the requested model.
+     * @return BaseModel  An instance of the requested model.
      */
-    protected function loadModel(string $model)
+    protected function loadModel(string $model): BaseModel
     {
         require_once __DIR__ . "/../models/" . $model . '.php';
         return new $model;
