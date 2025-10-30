@@ -25,7 +25,7 @@ class App
      * 
      * @var string|BaseController
      */
-    protected string|BaseController $controller = 'HomeController';
+    protected string|BaseController $controller = 'BookController';
 
     /**
      * The method of the controller to call.
@@ -51,38 +51,54 @@ class App
     public function __construct()
     {
         
-        $urlParts = $this->parseUrl();
+
+            $urlParts = $this->parseUrl();
 
        
-        require_once 'Routes.php';
+            require_once 'Routes.php';
+
+            
+
+            
+            $route = $urlParts[0] ?? '';
+
+            
+
+            if (isset($urlParts[1])) {
+                $route = $urlParts[0] . '/' . $urlParts[1];
+            }
+
+            
+
+            if (isset($routes[$route])) {
+                $this->controller = $routes[$route]['controller'];
+              
+                $this->method = $routes[$route]['method'];
+                
+                $this->params = array_slice($urlParts, 2);
+                
+            } else {
+            
+                http_response_code(404);
+                echo "404 - Route Not Found!";
+                exit;
+            }
+
+            
+            
+            require_once  __DIR__ . '/../controllers/' . $this->controller . '.php';;
+
+            
+            $this->controller = new $this->controller;
 
         
-        $route = $urlParts[0] ?? '';
 
-        if (isset($urlParts[1])) {
-            $route = $urlParts[0] . '/' . $urlParts[1];
-        }
+            
+            call_user_func_array([$this->controller, $this->method], $this->params);
 
+        
+        
        
-        if (isset($routes[$route])) {
-            $this->controller = $routes[$route]['controller'];
-            $this->method = $routes[$route]['method'];
-            $this->params = array_slice($urlParts, 2);
-        } else {
-           
-            http_response_code(404);
-            echo "404 - Route Not Found!";
-            exit;
-        }
-
-        
-        require_once __DIR__ . '/../controllers/' . $this->controller . '.php';
-
-        
-        $this->controller = new $this->controller;
-
-        
-        call_user_func_array([$this->controller, $this->method], $this->params);
     }
 
     /**
@@ -103,6 +119,19 @@ class App
         
         return [''];
     }
+
+
+    // private function handleError(int $code): void
+    // {
+    //     http_response_code($code);
+    //     $errorPage = __DIR__ . "/../views/errors/{$code}.php";
+    //     if (file_exists($errorPage)) {
+    //         require $errorPage;
+    //     } else {
+    //         echo "$code - Error";
+    //     }
+    //     exit;
+    // }
 }
 
 ?>

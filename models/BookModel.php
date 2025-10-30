@@ -4,7 +4,8 @@ class BookModel extends BaseModel {
 
     public function __construct()
     {
-        parent::__construct();
+        $this->db = new PDODatabase;
+        $this->init();
     }
 
     public function init(): void {
@@ -18,7 +19,7 @@ class BookModel extends BaseModel {
     }
 
     public function getById(string $id): ?array{
-
+        
         $this->db->query("SELECT * FROM book WHERE id = :id");
 
         $this->db->bindValue(':id', $id, PDO::PARAM_INT);
@@ -27,7 +28,9 @@ class BookModel extends BaseModel {
 
         $book = $this->db->result();
 
-        return $book ?: null;
+        // echo var_dump($book);
+
+        return $book ? $book : null;
     }
 
     public function add(array $data): bool {

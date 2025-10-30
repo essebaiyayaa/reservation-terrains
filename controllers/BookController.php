@@ -42,9 +42,10 @@ class BookController extends BaseController{
 
 
     public function edit(string $id): void{
-        {
         
+     
         $bookModel = $this->loadModel("BookModel");
+        
        
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
              /** @var BookModel $bookModel */
@@ -54,16 +55,19 @@ class BookController extends BaseController{
                 "author" => $_POST["author"],
                 "isbn" => $_POST['isbn']
             ];
-
+            
             $bookModel->update($id, $data);
             
         }
         
          /** @var BookModel $bookModel */
-        $book = $bookModel->getById($id);
+        // $book = $bookModel->getById($id);
+        // $book = "hello";
+
+        // echo var_dump($book);
         
-        $this->renderView('UpdateBook', ["book" => $book]);
-    }
+        $this->renderView('UpdateBook', ["book" => ""]);
+    
     }
 
     public function delete(string $id): void{

@@ -46,11 +46,11 @@ abstract class BaseModel
      * 
      * @param PDODatabase $database Database connection instance.
      */
-    public function __construct(PDODatabase $database)
-    {
-        $this->db = $database;
-        $this->init();
-    }
+    // public function __construct(PDODatabase $database)
+    // {
+    //     $this->db = $database;
+    //     $this->init();
+    // }
 
     /**
      * Initializes the model by setting up its table name and schema,

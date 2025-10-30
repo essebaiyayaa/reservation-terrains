@@ -72,10 +72,20 @@ abstract class BaseController
      * @param string $model The name of the model class to load.
      * @return BaseModel  An instance of the requested model.
      */
-    protected function loadModel(string $model): BaseModel
+    protected function loadModel(string $model): ?BaseModel
     {
-        require_once __DIR__ . "/../models/" . $model . '.php';
-        return new $model;
+       
+        $pathToFile = __DIR__ . "/../models/" . $model . '.php';
+        
+
+        if(file_exists($pathToFile)){
+            require_once $pathToFile;
+            return new $model;
+        }else{
+            echo "File missing";
+            return null;
+        }    
+        
     }
 
     /**

@@ -4,15 +4,15 @@
     <!-- Get extracted data from renderView method -->
     <ul>
         <!-- Display the book's ID -->
-        <li>ID: <?= $book['id'] ?></li>
+        <li>ID: <?= $book->id ?></li>
         <!-- Display the book's ISBN -->
-        <li>ISBN: <?= $book['isbn'] ?></li>
+        <li>ISBN: <?= $book->isbn ?></li>
         <!-- Display the book's title -->
-        <li>Title: <?= $book['title'] ?></li>
+        <li>Title: <?= $book->title ?></li>
         <!-- Display the book's author -->
-        <li>Author: <?= $book['author'] ?></li>
+        <li>Author: <?= $book->author ?></li>
         <!-- Display the date the book was added -->
-        <li>Date Added: <?= $book['date_added'] ?></li>
+        <li>Date Added: <?= $book->date_added ?></li>
     </ul>
    
     

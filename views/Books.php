@@ -13,14 +13,15 @@
             <th colspan="3">Actions</th>
         </thead>
         <!-- Loop through each book in the data array -->
-        <?php foreach ($data['books'] as $book) : ?>
+
+        <?php foreach ($books as $book) : ?>
             <tr>
                 <!-- Display book details -->
-                <td><?= $book['id'] ?></td>
-                <td><?= $book['isbn'] ?></td>
-                <td><?= $book['title'] ?></td>
-                <td><?= $book['author'] ?></td>
-                <td><?= $book['date_added'] ?></td>
+                <td><?= $book->id ?></td>
+                <td><?= $book->isbn ?></td>
+                <td><?= $book->title ?></td>
+                <td><?= $book->author ?></td>
+                <td><?= $book->date_added ?></td>
                 
             </tr>
         <?php endforeach; ?>
