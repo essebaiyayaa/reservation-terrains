@@ -83,10 +83,10 @@ abstract class BaseModel
      * Adds a new record to the database.
      * 
      * This method should use prepared statements for security.
-     * 
+     * @param array $data
      * @return bool True if the record was successfully added, false otherwise.
      */
-    abstract protected function add(): bool;
+    abstract protected function add(array $data): bool;
 
     /**
      * Updates an existing record in the database.
