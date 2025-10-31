@@ -346,7 +346,7 @@
          * @param string $name
          * @return string|false  Cookie value or false if not found
          */
-        function getCookieValue(string $name)
+        public static function getCookieValue(string $name)
         {
             return $_COOKIE[$name] ?? false;
         }
@@ -359,7 +359,7 @@
          * @param string $path
          * @param string $domain
          */
-        function deleteCookie(string $name, string $path = '/', string $domain = ''): void
+        public static function deleteCookie(string $name, string $path = '/', string $domain = ''): void
         {
             setcookie(
                 $name,
@@ -374,7 +374,67 @@
                 ]
             );
         }
+
+
+
+        ################################################################
+        #                      RECAPTCHA SPECIFIC                      #
+        ################################################################
+
+
+        /**
+         * Verify Google reCAPTCHA v2 or v3 response.
+         *
+         * @param string $recaptchaResponse The value of 'g-recaptcha-response' from the form
+         * @param string $secretKey Your secret key for reCAPTCHA
+         * @param string $verifyUrl The verification URL (default: Google's)
+         * @return void Throws HTTP error and exits if verification fails
+         */
+
+        public static function verifyRecaptcha(
+            string $recaptchaResponse,
+            string $secretKey,
+            string $verifyUrl = 'https://www.google.com/recaptcha/api/siteverify'
+        ): void {
+           
+            if (empty($recaptchaResponse)) {
+                http_response_code(400);
+                echo 'Captcha not completed.';
+                exit;
+            }
+
+            
+            $data = [
+                'secret' => $secretKey,
+                'response' => $recaptchaResponse,
+                'remoteip' => $_SERVER['REMOTE_ADDR'] ?? ''
+            ];
+
+           
+            $ch = curl_init($verifyUrl);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $response = curl_exec($ch);
+            curl_close($ch);
+
+            
+            $resp = json_decode($response, true);
+
+           
+            if (!isset($resp['success']) || $resp['success'] !== true) {
+                http_response_code(403);
+                echo 'Captcha verification failed.';
+                exit;
+            }
+        }
         
     }
+
+
+    
+
+
+    
 
 ?>

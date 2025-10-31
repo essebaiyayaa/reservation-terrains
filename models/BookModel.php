@@ -18,7 +18,7 @@ class BookModel extends BaseModel {
         return $this->db->results();
     }
 
-    public function getById(string $id): ?array{
+    public function getById(string $id): ?object{
         
         $this->db->query("SELECT * FROM book WHERE id = :id");
 

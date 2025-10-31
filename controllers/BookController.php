@@ -61,12 +61,10 @@ class BookController extends BaseController{
         }
         
          /** @var BookModel $bookModel */
-        // $book = $bookModel->getById($id);
-        // $book = "hello";
-
-        // echo var_dump($book);
+        $book = $bookModel->getById($id);
         
-        $this->renderView('UpdateBook', ["book" => ""]);
+        
+        $this->renderView('UpdateBook', ["book" => $book]);
     
     }
 

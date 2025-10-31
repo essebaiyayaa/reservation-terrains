@@ -16,14 +16,26 @@ class UserModel extends BaseModel{
         return [];
     }
 
-    public function getById(string $id): ?array {
-        return null;
+    public function getById(string $id): ?object {
+
+        $this->db->query("SELECT * FROM Utilisateur WHERE email = :id");
+
+        $this->db->bindValue(':id', $id, PDO::PARAM_STR);
+
+        $this->db->execute();
+
+        $user = $this->db->result();
+        
+
+        return $user ?: null;
     }
+
+    
 
 
     public function add(array $data): bool{
         $this->db->query("INSERT INTO Utilisateur (nom, prenom, email, telephone, mot_de_passe, verification_token, token_expiry ) VALUES (:nom, :prenom, :email, :telephone, :mot_de_passe, :verification_token, :token_expiry)");
-       
+        
         $this->db->bindValue(':nom', $data['nom'], PDO::PARAM_STR);
         $this->db->bindValue(':prenom', $data['prenom'], PDO::PARAM_STR);
         $this->db->bindValue(':email', $data['email'], PDO::PARAM_STR);
@@ -31,7 +43,7 @@ class UserModel extends BaseModel{
         $this->db->bindValue(':mot_de_passe', $data['mot_de_passe'], PDO::PARAM_STR);
         $this->db->bindValue(':verification_token', $data['verification_token'], PDO::PARAM_STR);
         $this->db->bindValue(':token_expiry', $data['token_expiry'], PDO::PARAM_STR);
-        
+            
         return $this->db->execute();
     }
 

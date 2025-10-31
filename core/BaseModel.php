@@ -77,7 +77,7 @@ abstract class BaseModel
      * 
      * @return array|null The record data as an associative array, or null if not found.
      */
-    abstract protected function getById(string $id): ?array;
+    abstract protected function getById(string $id): ?object;
 
     /**
      * Adds a new record to the database.

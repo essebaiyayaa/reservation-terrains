@@ -7,11 +7,6 @@ class AuthController extends BaseController {
 
     public function show(string $id): void {
         
-        $bookModel = $this->loadModel("BookModel");
-        /** @var BookModel $bookModel */
-        $book = $bookModel->getById($id);
-        
-        $this->renderView('Book', ["book" => $book], $book['title']);
     }
 
 
@@ -45,7 +40,7 @@ class AuthController extends BaseController {
                 exit;
             }
 
-            $hashedPassword = password_hash($mot_de_passe, PASSWORD_BCRYPT);
+            $hashedPassword = password_hash($mot_de_passe, PASSWORD_DEFAULT);
 
             $verification_token = Utils::generateRandomInt(8);
             $token_expiry_minutes = 30;
@@ -91,40 +86,73 @@ class AuthController extends BaseController {
         
     }
 
+    public function login(): void {
+        $this->renderView('Auth/Login', []);
+
+        if ($_SERVER['REQUEST_METHOD'] == "POST"){
+
+            $userModel = $this->loadModel("UserModel");
+
+            $email          = trim($_POST["email"] ?? '');
+            $mot_de_passe   = $_POST["mot_de_passe"] ?? '';
+
+
+
+            $errors = [];
+
+            
+            if (empty($email))       $errors[] = "L'adresse e-mail est obligatoire.";
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "L'adresse e-mail n'est pas valide.";
+            
+            if (empty($mot_de_passe)) $errors[] = "Le mot de passe est obligatoire.";
+
+            if (!empty($errors)) {
+                $this->renderView('Auth/Register', ["errors" => $errors]);
+                exit;
+            }
+
+            // echo "Hello";
+            /** @var UserModel $userModel */
+            /** @var object|null $user */
+            $user = $userModel->getById(htmlspecialchars($email));
+            
+            // echo var_dump($user);
+
+            if($user){
+                if(password_verify($mot_de_passe, $user->mot_de_passe)){
+                    $token_duration_seconds = 3600;
+                    // JWT Token
+
+                    $payload = [
+                        'user_id' => $user->id_utilisateur,
+                        'email' => $user->email,
+                        'role' => $user->role
+                    ];
+                    $token = Utils::generateJWT($payload, JWT_SECRET_KEY, $token_duration_seconds);
+                    Utils::setCookieSafe('auth_token', $token, $token_duration_seconds);
+
+                    echo "All good!";
+                    
+                }else{
+                    $errors[] = "Veuillez saisir les bonnes informations";
+                }
+            }else{
+                $errors[] = "Veuillez saisir les bonnes informations";
+            }    
+
+        }
+    }
+
+    public function logout(): void {
+
+    }
 
     public function edit(string $id): void{
-        
-     
-        $bookModel = $this->loadModel("BookModel");
-        
        
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-             /** @var BookModel $bookModel */
-
-             $data = [
-                "title" => $_POST["title"],
-                "author" => $_POST["author"],
-                "isbn" => $_POST['isbn']
-            ];
-            
-            $bookModel->update($id, $data);
-            
-        }
-        
-         /** @var BookModel $bookModel */
-        // $book = $bookModel->getById($id);
-        // $book = "hello";
-
-        // echo var_dump($book);
-        
-        $this->renderView('UpdateBook', ["book" => ""]);
-    
     }
 
     public function delete(string $id): void{
-        $bookModel = $this->loadModel("BookModel");
-        /** @var BookModel $bookModel */
-        $bookModel->delete($id);
+        
     }
 }
 

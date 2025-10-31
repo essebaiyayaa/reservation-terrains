@@ -74,12 +74,12 @@
     </div>
   </div>
 
-  <!-- <div class="recaptcha-wrapper">
+  <div class="recaptcha-wrapper">
     <div
       class="g-recaptcha"
       data-sitekey="<?php echo RECAPTCHA_SITE_KEY; ?>"
     ></div>
-  </div> -->
+  </div>
 
   <button type="submit" class="btn-submit">
     <i class="fas fa-user-plus"></i> Créer mon compte

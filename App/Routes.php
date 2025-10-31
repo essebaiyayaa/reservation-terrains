@@ -3,11 +3,18 @@
 
 $routes = [
     
-    //TODO: To be deleted. Just an example
-    '' => ['controller' => 'BookController', 'method' => 'index'],
+    // Auth Routes
 
     'register' => ['controller' => 'AuthController', 'method' => 'create'],
 
+    'login' => ['controller' => 'AuthController', 'method' => 'login'],
+
+
+
+
+    // Test Routes
+
+    '' => ['controller' => 'BookController', 'method' => 'index'],
    
     'books' => ['controller' => 'BookController', 'method' => 'index'],
 
