@@ -75,8 +75,6 @@ class BookController extends BaseController{
         /** @var BookModel $bookModel */
         $bookModel->delete($id);
     }
-
-
     
 }
 

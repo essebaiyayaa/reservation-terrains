@@ -171,7 +171,7 @@ class Template {
                     <div class='code-box'>{verification_code}</div>
 
                     <div class='expiry-notice'>
-                        Ce code est valable pendant {expiry} heures.
+                        Ce code est valable pendant {expiry} minutes.
                     </div>
                     
                     <p>Si vous n'avez pas créé de compte sur {SITE_NAME}, ignorez simplement cet email.</p>

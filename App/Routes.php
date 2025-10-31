@@ -6,6 +6,8 @@ $routes = [
     //TODO: To be deleted. Just an example
     '' => ['controller' => 'BookController', 'method' => 'index'],
 
+    'register' => ['controller' => 'AuthController', 'method' => 'create'],
+
    
     'books' => ['controller' => 'BookController', 'method' => 'index'],
 
