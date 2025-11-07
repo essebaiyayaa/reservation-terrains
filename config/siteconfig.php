@@ -1,7 +1,14 @@
 <?php
     
     require_once 'load.php';
+// Determine base URL dynamically or use from .env
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+$basePath = str_replace('/index.php', '', $scriptName);
 
+define('BASE_URL', $protocol . '://' . $host . $basePath);
+define('BASE_PATH', $basePath);
     
     define('SITE_URL', $_ENV['SITE_URL']);
     define('SITE_NAME', $_ENV['SITE_NAME']);
