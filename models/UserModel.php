@@ -6,7 +6,7 @@
  * Handles all database operations for Utilisateur table
  * 
  * @package Models
- * @author  System
+ * @author  Amos 
  * @version 1.1
  */
 class UserModel extends BaseModel
