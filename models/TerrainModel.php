@@ -125,6 +125,12 @@ class TerrainModel extends BaseModel
 
         return $this->db->results();
     }
+    public function getTotalCount(): int
+{
+    $this->db->query("SELECT COUNT(*) as total FROM Terrain");
+    $result = $this->db->result();
+    return $result ? intval($result->total) : 0;
+}
 
     /**
      * Add new terrain
