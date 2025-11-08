@@ -112,90 +112,96 @@ class TerrainController extends BaseController
      * 
      * @return void
      */
-    public function create(): void
-    {
-        // Check authentication and admin role
-        if (!$this->currentUser || $this->currentUser->role !== 'admin') {
-            http_response_code(403);
-            $this->renderView('Errors/403', [], 'Accès interdit');
-            return;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            // Load gerants for assignment
-            /** @var UserModel $userModel */
-            $userModel = $this->loadModel('UserModel');
-            $gerants = $userModel->getAllByRole('gerant_terrain');
-
-            $this->renderView('Terrain/Create', [
-                'gerants' => $gerants ?: [],
-                'currentUser' => $this->currentUser
-            ], 'Ajouter un Terrain');
-            return;
-        }
-
-        // Handle POST request
-        $nom_terrain = trim($_POST['nom_terrain'] ?? '');
-        $adresse = trim($_POST['adresse'] ?? '');
-        $ville = trim($_POST['ville'] ?? '');
-        $taille = $_POST['taille'] ?? '';
-        $type = $_POST['type'] ?? '';
-        $prix_heure = floatval($_POST['prix_heure'] ?? 0);
-        $id_gerant = !empty($_POST['id_gerant']) ? intval($_POST['id_gerant']) : null;
-
-        // Validation
-        $errors = [];
-        
-        if (empty($nom_terrain)) $errors[] = "Le nom du terrain est obligatoire";
-        if (empty($adresse)) $errors[] = "L'adresse est obligatoire";
-        if (empty($ville)) $errors[] = "La ville est obligatoire";
-        if (empty($taille)) $errors[] = "La taille est obligatoire";
-        if (empty($type)) $errors[] = "Le type est obligatoire";
-        if ($prix_heure <= 0) $errors[] = "Le prix doit être supérieur à 0";
-
-        if (!empty($errors)) {
-            /** @var UserModel $userModel */
-            $userModel = $this->loadModel('UserModel');
-            $gerants = $userModel->getAllByRole('gerant_terrain');
-            
-            $this->renderView('Terrain/Create', [
-                'errors' => $errors,
-                'gerants' => $gerants ?: [],
-                'formData' => $_POST,
-                'currentUser' => $this->currentUser
-            ], 'Ajouter un Terrain');
-            return;
-        }
-
-        // Create terrain
-        $data = [
-            'nom_terrain' => htmlspecialchars($nom_terrain),
-            'adresse' => htmlspecialchars($adresse),
-            'ville' => htmlspecialchars($ville),
-            'taille' => $taille,
-            'type' => $type,
-            'prix_heure' => $prix_heure,
-            'id_utilisateur' => $id_gerant
-        ];
-
-        if ($this->terrainModel->add($data)) {
-            $_SESSION['success'] = "Terrain ajouté avec succès !";
-            header('Location: /terrains');
-            exit;
-        } else {
-            $errors[] = "Erreur lors de l'ajout du terrain";
-            /** @var UserModel $userModel */
-            $userModel = $this->loadModel('UserModel');
-            $gerants = $userModel->getAllByRole('gerant_terrain');
-            
-            $this->renderView('Terrain/Create', [
-                'errors' => $errors,
-                'gerants' => $gerants ?: [],
-                'formData' => $_POST,
-                'currentUser' => $this->currentUser
-            ], 'Ajouter un Terrain');
-        }
+/**
+ * Show create form (Admin only)
+ * Handles both GET (display form) and POST (submit form)
+ * 
+ * @return void
+ */
+public function create(): void
+{
+    // Check authentication and admin role
+    if (!$this->currentUser || $this->currentUser->role !== 'admin') {
+        http_response_code(403);
+        $this->renderView('Errors/403', [], 'Accès interdit');
+        return;
     }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        // Load gerants for assignment
+        /** @var UserModel $userModel */
+        $userModel = $this->loadModel('UserModel');
+        $gerants = $userModel->getAllByRole('gerant_terrain');
+
+        $this->renderView('Terrain/Create', [
+            'gerants' => $gerants ?: [],
+            'currentUser' => $this->currentUser
+        ], 'Ajouter un Terrain');
+        return;
+    }
+
+    // Handle POST request
+    $nom_terrain = trim($_POST['nom_terrain'] ?? '');
+    $adresse = trim($_POST['adresse'] ?? '');
+    $ville = trim($_POST['ville'] ?? '');
+    $taille = $_POST['taille'] ?? '';
+    $type = $_POST['type'] ?? '';
+    $prix_heure = floatval($_POST['prix_heure'] ?? 0);
+    $id_gerant = !empty($_POST['id_gerant']) ? intval($_POST['id_gerant']) : null;
+
+    // Validation
+    $errors = [];
+    
+    if (empty($nom_terrain)) $errors[] = "Le nom du terrain est obligatoire";
+    if (empty($adresse)) $errors[] = "L'adresse est obligatoire";
+    if (empty($ville)) $errors[] = "La ville est obligatoire";
+    if (empty($taille)) $errors[] = "La taille est obligatoire";
+    if (empty($type)) $errors[] = "Le type est obligatoire";
+    if ($prix_heure <= 0) $errors[] = "Le prix doit être supérieur à 0";
+
+    if (!empty($errors)) {
+        /** @var UserModel $userModel */
+        $userModel = $this->loadModel('UserModel');
+        $gerants = $userModel->getAllByRole('gerant_terrain');
+        
+        $this->renderView('Terrain/Create', [
+            'errors' => $errors,
+            'gerants' => $gerants ?: [],
+            'formData' => $_POST,
+            'currentUser' => $this->currentUser
+        ], 'Ajouter un Terrain');
+        return;
+    }
+
+    // Create terrain
+    $data = [
+        'nom_terrain' => htmlspecialchars($nom_terrain),
+        'adresse' => htmlspecialchars($adresse),
+        'ville' => htmlspecialchars($ville),
+        'taille' => $taille,
+        'type' => $type,
+        'prix_heure' => $prix_heure,
+        'id_utilisateur' => $id_gerant
+    ];
+
+    if ($this->terrainModel->add($data)) {
+        $_SESSION['success'] = "Terrain ajouté avec succès !";
+        // CORRECTION : Utiliser UrlHelper au lieu de redirection absolue
+        UrlHelper::redirect('admin/terrains');
+    } else {
+        $errors[] = "Erreur lors de l'ajout du terrain";
+        /** @var UserModel $userModel */
+        $userModel = $this->loadModel('UserModel');
+        $gerants = $userModel->getAllByRole('gerant_terrain');
+        
+        $this->renderView('Terrain/Create', [
+            'errors' => $errors,
+            'gerants' => $gerants ?: [],
+            'formData' => $_POST,
+            'currentUser' => $this->currentUser
+        ], 'Ajouter un Terrain');
+    }
+}
 
     /**
      * Show edit form (Gerant for their terrain, Admin for all)
