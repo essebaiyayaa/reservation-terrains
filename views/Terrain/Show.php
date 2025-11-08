@@ -274,20 +274,7 @@
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <a href="/" class="logo">
-                <i class="fas fa-futbol"></i> FootBooking
-            </a>
-            <div>
-                <?php if ($currentUser && $currentUser->role === 'gerant_terrain' && $terrain->id_utilisateur == $currentUser->user_id): ?>
-                    <a href="/terrain/edit/<?= $terrain->id_terrain ?>" class="btn btn-secondary">
-                        <i class="fas fa-edit"></i> Modifier
-                    </a>
-                <?php endif; ?>
-            </div>
-        </nav>
-    </header>
+
 
     <div class="container">
         <a href="/terrains" class="back-btn">
@@ -403,4 +390,3 @@
     </div>
 </body>
 </html>
-<?php include '../views/footer.php'; ?>

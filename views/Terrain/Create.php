@@ -58,6 +58,10 @@
             margin-bottom: 1.5rem;
         }
 
+        .back-btn:hover {
+            color: #dc2626;
+        }
+
         .page-header {
             background: white;
             padding: 2rem;
@@ -125,16 +129,22 @@
             color: #dc2626;
         }
 
-        .form-input, .form-select {
+        .form-input, .form-select, .form-textarea {
             width: 100%;
             padding: 0.75rem;
             border: 2px solid #e5e7eb;
             border-radius: 8px;
             font-size: 1rem;
             transition: border-color 0.3s;
+            font-family: inherit;
         }
 
-        .form-input:focus, .form-select:focus {
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
             outline: none;
             border-color: #dc2626;
         }
@@ -199,20 +209,19 @@
 <body>
     <header>
         <nav>
-            <a href="/admin/dashboard" class="logo">
-                <i class="fas fa-shield-alt"></i>
-                Admin - FootBooking
+            <a href="<?= UrlHelper::url('admin') ?>" class="logo">
+                <i class="fas fa-shield-alt"></i> FootBooking
             </a>
-            <a href="/terrains" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Retour aux terrains
+            <a href="<?= UrlHelper::url('admin') ?>" style="color: #6b7280; text-decoration: none;">
+                <i class="fas fa-arrow-left"></i> Retour
             </a>
         </nav>
     </header>
 
     <div class="container">
-        <a href="/terrains" class="back-btn">
+        <a href="<?= UrlHelper::url('admin/terrains') ?>" class="back-btn">
             <i class="fas fa-arrow-left"></i>
-            Retour à la liste
+            Retour à la liste des terrains
         </a>
 
         <div class="page-header">
@@ -227,24 +236,27 @@
             <div class="alert alert-success">
                 <i class="fas fa-check-circle"></i>
                 <?= htmlspecialchars($_SESSION['success']) ?>
-                <?php unset($_SESSION['success']); ?>
             </div>
+            <?php unset($_SESSION['success']); ?>
         <?php endif; ?>
 
-        <?php if (isset($errors) && !empty($errors)): ?>
+        <?php if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])): ?>
             <div class="alert alert-error">
                 <i class="fas fa-exclamation-triangle"></i>
                 <strong>Erreur(s) détectée(s):</strong>
                 <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
-                    <?php foreach ($errors as $error): ?>
+                    <?php foreach ($_SESSION['errors'] as $error): ?>
                         <li><?= htmlspecialchars($error) ?></li>
                     <?php endforeach; ?>
                 </ul>
             </div>
+            <?php unset($_SESSION['errors']); ?>
         <?php endif; ?>
 
         <div class="form-card">
-            <form method="POST" action="/terrain/add">
+            <!-- CORRIGÉ : Action pointe vers terrain/create pour la soumission -->
+            <form method="POST" action="<?= UrlHelper::url('terrain/create') ?>">
+                
                 <!-- Informations générales -->
                 <div class="form-section">
                     <h2 class="section-title">
@@ -293,6 +305,18 @@
                             required
                         >
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Description
+                        </label>
+                        <textarea 
+                            name="description" 
+                            class="form-textarea" 
+                            placeholder="Décrivez les particularités du terrain..."
+                        ><?= htmlspecialchars($formData['description'] ?? '') ?></textarea>
+                        <p class="form-help">Description optionnelle du terrain</p>
+                    </div>
                 </div>
 
                 <!-- Caractéristiques -->
@@ -308,9 +332,9 @@
                         </label>
                         <select name="taille" class="form-select" required>
                             <option value="">Sélectionnez la taille</option>
-                            <option value="Mini foot" <?= ($formData['taille'] ?? '') === 'Mini foot' ? 'selected' : '' ?>>Mini foot</option>
-                            <option value="Terrain moyen" <?= ($formData['taille'] ?? '') === 'Terrain moyen' ? 'selected' : '' ?>>Terrain moyen</option>
-                            <option value="Grand terrain" <?= ($formData['taille'] ?? '') === 'Grand terrain' ? 'selected' : '' ?>>Grand terrain</option>
+                            <option value="Mini foot" <?= ($formData['taille'] ?? '') === 'Mini foot' ? 'selected' : '' ?>>Mini foot (5x5)</option>
+                            <option value="Terrain moyen" <?= ($formData['taille'] ?? '') === 'Terrain moyen' ? 'selected' : '' ?>>Terrain moyen (7x7)</option>
+                            <option value="Grand terrain" <?= ($formData['taille'] ?? '') === 'Grand terrain' ? 'selected' : '' ?>>Grand terrain (11x11)</option>
                         </select>
                     </div>
 
@@ -323,6 +347,7 @@
                             <option value="Gazon naturel" <?= ($formData['type'] ?? '') === 'Gazon naturel' ? 'selected' : '' ?>>Gazon naturel</option>
                             <option value="Gazon artificiel" <?= ($formData['type'] ?? '') === 'Gazon artificiel' ? 'selected' : '' ?>>Gazon artificiel</option>
                             <option value="Terrain dur" <?= ($formData['type'] ?? '') === 'Terrain dur' ? 'selected' : '' ?>>Terrain dur</option>
+                            <option value="Parquet" <?= ($formData['type'] ?? '') === 'Parquet' ? 'selected' : '' ?>>Parquet</option>
                         </select>
                     </div>
 
@@ -337,10 +362,10 @@
                             placeholder="Ex: 150"
                             value="<?= htmlspecialchars($formData['prix_heure'] ?? '') ?>"
                             min="0"
-                            step="0.01"
+                            step="10"
                             required
                         >
-                        <p class="form-help">Le prix de location du terrain par heure</p>
+                        <p class="form-help">Le prix de location du terrain par heure en Dirhams</p>
                     </div>
                 </div>
 
@@ -357,18 +382,23 @@
                         </label>
                         <select name="id_gerant" class="form-select">
                             <option value="">Aucun gérant (à assigner plus tard)</option>
-                            <?php foreach ($gerants as $gerant): ?>
-                                <option value="<?= $gerant->id_utilisateur ?>" 
-                                        <?= ($formData['id_gerant'] ?? '') == $gerant->id_utilisateur ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($gerant->prenom . ' ' . $gerant->nom . ' (' . $gerant->email . ')') ?>
-                                </option>
-                            <?php endforeach; ?>
+                            <?php if (!empty($gerants)): ?>
+                                <?php foreach ($gerants as $gerant): ?>
+                                    <option value="<?= $gerant->id_utilisateur ?>" 
+                                            <?= ($formData['id_gerant'] ?? '') == $gerant->id_utilisateur ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($gerant->prenom . ' ' . $gerant->nom . ' (' . $gerant->email . ')') ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </select>
                         <p class="form-help">
                             <?php if (empty($gerants)): ?>
                                 <span style="color: #f59e0b;">
                                     <i class="fas fa-exclamation-triangle"></i>
-                                    Aucun gérant disponible. Créez d'abord un compte gérant.
+                                    Aucun gérant disponible. 
+                                    <a href="<?= UrlHelper::url('admin/gerants') ?>" style="color: #dc2626; text-decoration: underline;">
+                                        Créez d'abord un compte gérant
+                                    </a>
                                 </span>
                             <?php else: ?>
                                 Le gérant sera responsable de la gestion de ce terrain
@@ -379,13 +409,13 @@
 
                 <!-- Actions -->
                 <div class="form-actions">
-                    <a href="/terrains" class="btn btn-secondary">
+                    <a href="<?= UrlHelper::url('admin/terrains') ?>" class="btn btn-secondary">
                         <i class="fas fa-times"></i>
                         Annuler
                     </a>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i>
-                        Ajouter le terrain
+                        Créer le terrain
                     </button>
                 </div>
             </form>
