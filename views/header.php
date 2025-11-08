@@ -58,10 +58,19 @@
             color: #555;
             font-weight: 500;
             transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
         }
 
         .nav-links a:hover {
             color: #16a34a;
+        }
+
+        .nav-links a.active {
+            color: #16a34a;
+            font-weight: 600;
         }
 
         .auth-buttons {
@@ -184,6 +193,17 @@
             border-top: 1px solid #e5e7eb;
         }
 
+        /* Badge Admin */
+        .admin-badge {
+            background: #dc2626;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
         @media (max-width: 768px) {
             .nav-links {
                 display: none;
@@ -198,15 +218,58 @@
             <a href="<?= UrlHelper::url('/') ?>" class="logo">
                 <i class="fas fa-futbol"></i>
                 FootBooking
+                <?php if (isset($currentUser) && $currentUser->role === 'admin'): ?>
+                    <span class="admin-badge">ADMIN</span>
+                <?php endif; ?>
             </a>
             
             <ul class="nav-links">
-                <li><a href="<?= UrlHelper::url('/') ?>">Accueil</a></li>
-                <li><a href="<?= UrlHelper::url('terrains') ?>">Liste des terrains</a></li>
-                <?php if (isset($currentUser)): ?>
-                    <li><a href="<?= UrlHelper::url('reservation') ?>">Réserver un terrain</a></li>
-                    <?php if ($currentUser->role === 'client'): ?>
-                        <li><a href="<?= UrlHelper::url('mes-reservations') ?>">Mes réservations</a></li>
+                <?php if (isset($currentUser) && $currentUser->role === 'admin'): ?>
+                    <!-- Menu spécifique pour l'admin -->
+                    <li>
+                        <a href="<?= UrlHelper::url('admin') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], 'admin/dashboard') !== false && !strpos($_SERVER['REQUEST_URI'], '/admin/terrains') && !strpos($_SERVER['REQUEST_URI'], '/admin/reservations') && !strpos($_SERVER['REQUEST_URI'], '/admin/gerants') ? 'active' : '' ?>">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Tableau de bord
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= UrlHelper::url('admin/terrains') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], '/admin/terrains') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-list"></i>
+                            Tous les terrains
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= UrlHelper::url('terrain/create') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], '/terrain/create') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-plus"></i>
+                            Ajouter un terrain
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= UrlHelper::url('admin/reservations') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], '/admin/reservations') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-calendar-alt"></i>
+                            Toutes les réservations
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= UrlHelper::url('admin/gerants') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], '/admin/gerants') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-users"></i>
+                            Gestion des gérants
+                        </a>
+                    </li>
+                <?php else: ?>
+                    <!-- Menu pour les autres utilisateurs -->
+                    <li><a href="<?= UrlHelper::url('/') ?>">Accueil</a></li>
+                    <li><a href="<?= UrlHelper::url('terrains') ?>">Liste des terrains</a></li>
+                    <?php if (isset($currentUser)): ?>
+                        <li><a href="<?= UrlHelper::url('reservation') ?>">Réserver un terrain</a></li>
+                        <?php if ($currentUser->role === 'client'): ?>
+                            <li><a href="<?= UrlHelper::url('mes-reservations') ?>">Mes réservations</a></li>
+                        <?php endif; ?>
                     <?php endif; ?>
                 <?php endif; ?>
             </ul>
@@ -218,6 +281,9 @@
                         <button class="user-button" onclick="toggleUserMenu()">
                             <i class="fa-solid fa-user-circle"></i>
                             <?php echo htmlspecialchars($currentUser->prenom ?? 'User'); ?>
+                            <?php if ($currentUser->role === 'admin'): ?>
+                                <i class="fas fa-crown" style="font-size: 0.8rem;"></i>
+                            <?php endif; ?>
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="dropdown-menu" id="userDropdown">
@@ -230,7 +296,7 @@
                                 </a>
                             <?php endif; ?>
                             <?php if ($currentUser->role === 'admin'): ?>
-                                <a href="<?= UrlHelper::url('dashboard/admin') ?>">
+                                <a href="<?= UrlHelper::url('admin') ?>">
                                     <i class="fa-solid fa-gauge"></i> Dashboard Admin
                                 </a>
                             <?php elseif ($currentUser->role === 'gerant_terrain'): ?>
