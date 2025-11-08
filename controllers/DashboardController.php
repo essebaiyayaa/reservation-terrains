@@ -52,7 +52,7 @@ class DashboardController extends BaseController
         $terrains = $terrainModel->getAll();
         $users = $userModel->getAll();
 
-        $this->renderView('Dashboard/Admin', [
+        $this->renderView('Admin/Dashboard', [
             'currentUser' => $this->currentUser,
             'terrains' => $terrains,
             'users' => $users
