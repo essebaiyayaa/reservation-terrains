@@ -1,0 +1,429 @@
+<?php
+
+/**
+ * Class ReservationModel
+ * 
+ * Handles all reservation-related database operations
+ * 
+ * @package Models
+ * @author  Jihane Chouhe
+ * @version 1.2 - Fixed $db initialization without modifying BaseModel
+ */
+class ReservationModel extends BaseModel
+{
+    protected string $table = 'Reservation';
+    protected string $primaryKey = 'id_reservation';
+    protected string $schema;
+
+    /**
+     * Constructor - Initialise $db manuellement
+     */
+    public function __construct()
+    {
+        // Initialiser $db manuellement puisque BaseModel::__construct() est commenté
+        $this->db = new PDODatabase();
+        $this->init();
+    }
+
+    /**
+     * Initialize the model
+     */
+    protected function init(): void
+    {
+        $this->table = 'Reservation';
+        $this->schema = "
+            CREATE TABLE IF NOT EXISTS Reservation (
+                id_reservation INT AUTO_INCREMENT PRIMARY KEY,
+                id_utilisateur INT NOT NULL,
+                id_terrain INT NOT NULL,
+                date_reservation DATE NOT NULL,
+                heure_debut TIME NOT NULL,
+                heure_fin TIME NOT NULL,
+                prix_total DECIMAL(10,2) NOT NULL,
+                statut_paiement ENUM('en_attente', 'paye', 'annule') DEFAULT 'en_attente',
+                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (id_utilisateur) REFERENCES Utilisateur(id_utilisateur),
+                FOREIGN KEY (id_terrain) REFERENCES Terrain(id_terrain)
+            )
+        ";
+    }
+
+    /**
+     * Get all reservations with filters
+     * 
+     * @param array $filters Array of filter criteria
+     * @return array List of reservations
+     */
+    public function getAll(array $filters = []): array
+    {
+        $sql = "
+            SELECT 
+                r.*, 
+                t.nom_terrain, 
+                t.ville,
+                u.prenom as client_prenom, 
+                u.nom as client_nom, 
+                u.telephone,
+                g.prenom as gerant_prenom,
+                g.nom as gerant_nom
+            FROM Reservation r
+            JOIN Terrain t ON r.id_terrain = t.id_terrain
+            JOIN Utilisateur u ON r.id_utilisateur = u.id_utilisateur
+            LEFT JOIN Utilisateur g ON t.id_utilisateur = g.id_utilisateur
+            WHERE 1=1
+        ";
+        
+        $params = [];
+        
+        // Filter by statut
+        if (!empty($filters['statut'])) {
+            $sql .= " AND r.statut_paiement = :statut";
+            $params[':statut'] = $filters['statut'];
+        }
+        
+        // Filter by date
+        if (!empty($filters['date'])) {
+            $sql .= " AND r.date_reservation = :date";
+            $params[':date'] = $filters['date'];
+        }
+        
+        // Filter by terrain
+        if (!empty($filters['terrainId'])) {
+            $sql .= " AND r.id_terrain = :terrain_id";
+            $params[':terrain_id'] = $filters['terrainId'];
+        }
+        
+        $sql .= " ORDER BY r.date_reservation DESC, r.heure_debut DESC";
+        
+        $this->db->query($sql);
+        
+        foreach ($params as $key => $value) {
+            $this->db->bindValue($key, $value, PDO::PARAM_STR);
+        }
+        
+        return $this->db->results();
+    }
+
+    /**
+     * Get reservations by terrain ID
+     * 
+     * @param string $terrainId Terrain ID
+     * @return array List of reservations
+     */
+    public function getByTerrainId(string $terrainId): array
+    {
+        $this->db->query("
+            SELECT 
+                r.*,
+                u.prenom as client_prenom,
+                u.nom as client_nom,
+                u.email as client_email,
+                u.telephone as client_telephone
+            FROM Reservation r
+            JOIN Utilisateur u ON r.id_utilisateur = u.id_utilisateur
+            WHERE r.id_terrain = :terrain_id
+            ORDER BY r.date_reservation DESC, r.heure_debut DESC
+        ");
+        
+        $this->db->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
+        
+        return $this->db->results();
+    }
+
+    /**
+     * Get reservations by user ID
+     * 
+     * @param string $userId User ID
+     * @return array List of user's reservations
+     */
+    public function getByUserId(string $userId): array
+    {
+        $this->db->query("
+            SELECT 
+                r.*,
+                t.nom_terrain,
+                t.ville,
+                t.adresse,
+                t.type_terrain,
+                t.prix_par_heure
+            FROM Reservation r
+            JOIN Terrain t ON r.id_terrain = t.id_terrain
+            WHERE r.id_utilisateur = :user_id
+            ORDER BY r.date_reservation DESC, r.heure_debut DESC
+        ");
+        
+        $this->db->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        
+        return $this->db->results();
+    }
+
+    /**
+     * Get monthly revenue (current month)
+     * 
+     * @return float Total revenue for current month
+     */
+    public function getMonthlyRevenue(): float
+    {
+        $this->db->query("
+            SELECT COALESCE(SUM(prix_total), 0) as ca_mois 
+            FROM Reservation 
+            WHERE MONTH(date_reservation) = MONTH(CURDATE()) 
+            AND YEAR(date_reservation) = YEAR(CURDATE())
+            AND statut_paiement = 'paye'
+        ");
+        
+        $result = $this->db->result();
+        return $result ? floatval($result->ca_mois) : 0;
+    }
+
+    /**
+     * Get reservation by ID with full details
+     * 
+     * @param string $id Reservation ID
+     * @return object|null Reservation object or null
+     */
+    public function getById(string $id): ?object
+    {
+        $this->db->query("
+            SELECT 
+                r.*,
+                t.nom_terrain,
+                t.ville,
+                t.adresse,
+                t.type_terrain,
+                u.prenom as client_prenom,
+                u.nom as client_nom,
+                u.email as client_email,
+                u.telephone as client_telephone
+            FROM Reservation r
+            JOIN Terrain t ON r.id_terrain = t.id_terrain
+            JOIN Utilisateur u ON r.id_utilisateur = u.id_utilisateur
+            WHERE r.id_reservation = :id
+        ");
+        
+        $this->db->bindValue(':id', $id, PDO::PARAM_INT);
+        
+        $result = $this->db->result();
+        return $result ?: null;
+    }
+
+    /**
+     * Update reservation
+     * 
+     * @param string $id Reservation ID
+     * @param array $data Updated data
+     * @return bool Success status
+     */
+    public function update(string $id, array $data): bool
+    {
+        $fields = [];
+        $params = [':id' => $id];
+        
+        // Build dynamic UPDATE query
+        foreach ($data as $key => $value) {
+            $fields[] = "$key = :$key";
+            $params[":$key"] = $value;
+        }
+        
+        $sql = "UPDATE Reservation SET " . implode(', ', $fields) . " WHERE id_reservation = :id";
+        
+        $this->db->query($sql);
+        
+        foreach ($params as $param => $val) {
+            $this->db->bindValue($param, $val, PDO::PARAM_STR);
+        }
+        
+        return $this->db->execute();
+    }
+
+    /**
+     * Add new reservation
+     * 
+     * @param array $data Reservation data
+     * @return bool Success status
+     */
+    public function add(array $data): bool
+    {
+        $this->db->query("
+            INSERT INTO Reservation (
+                id_utilisateur,
+                id_terrain,
+                date_reservation,
+                heure_debut,
+                heure_fin,
+                prix_total,
+                statut_paiement,
+                date_creation
+            ) VALUES (
+                :id_utilisateur,
+                :id_terrain,
+                :date_reservation,
+                :heure_debut,
+                :heure_fin,
+                :prix_total,
+                :statut_paiement,
+                NOW()
+            )
+        ");
+        
+        $this->db->bindValue(':id_utilisateur', $data['id_utilisateur'], PDO::PARAM_INT);
+        $this->db->bindValue(':id_terrain', $data['id_terrain'], PDO::PARAM_INT);
+        $this->db->bindValue(':date_reservation', $data['date_reservation'], PDO::PARAM_STR);
+        $this->db->bindValue(':heure_debut', $data['heure_debut'], PDO::PARAM_STR);
+        $this->db->bindValue(':heure_fin', $data['heure_fin'], PDO::PARAM_STR);
+        $this->db->bindValue(':prix_total', $data['prix_total'], PDO::PARAM_STR);
+        $this->db->bindValue(':statut_paiement', $data['statut_paiement'] ?? 'en_attente', PDO::PARAM_STR);
+        
+        return $this->db->execute();
+    }
+
+    /**
+     * Update reservation status
+     * 
+     * @param string $id Reservation ID
+     * @param string $statut New status
+     * @return bool Success status
+     */
+    public function updateStatus(string $id, string $statut): bool
+    {
+        $this->db->query("
+            UPDATE Reservation 
+            SET statut_paiement = :statut 
+            WHERE id_reservation = :id
+        ");
+        
+        $this->db->bindValue(':id', $id, PDO::PARAM_INT);
+        $this->db->bindValue(':statut', $statut, PDO::PARAM_STR);
+        
+        return $this->db->execute();
+    }
+
+    /**
+     * Check if time slot is available
+     * 
+     * @param string $terrainId Terrain ID
+     * @param string $date Reservation date
+     * @param string $heureDebut Start time
+     * @param string $heureFin End time
+     * @param string|null $excludeId Reservation ID to exclude (for updates)
+     * @return bool True if available
+     */
+    public function isTimeSlotAvailable(
+        string $terrainId, 
+        string $date, 
+        string $heureDebut, 
+        string $heureFin,
+        ?string $excludeId = null
+    ): bool {
+        $sql = "
+            SELECT COUNT(*) as count
+            FROM Reservation
+            WHERE id_terrain = :terrain_id
+            AND date_reservation = :date
+            AND statut_paiement != 'annule'
+            AND (
+                (heure_debut < :heure_fin AND heure_fin > :heure_debut)
+            )
+        ";
+        
+        if ($excludeId) {
+            $sql .= " AND id_reservation != :exclude_id";
+        }
+        
+        $this->db->query($sql);
+        $this->db->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
+        $this->db->bindValue(':date', $date, PDO::PARAM_STR);
+        $this->db->bindValue(':heure_debut', $heureDebut, PDO::PARAM_STR);
+        $this->db->bindValue(':heure_fin', $heureFin, PDO::PARAM_STR);
+        
+        if ($excludeId) {
+            $this->db->bindValue(':exclude_id', $excludeId, PDO::PARAM_INT);
+        }
+        
+        $result = $this->db->result();
+        return $result && $result->count == 0;
+    }
+
+    /**
+     * Get upcoming reservations for a user
+     * 
+     * @param string $userId User ID
+     * @param int $limit Number of results
+     * @return array List of upcoming reservations
+     */
+    public function getUpcomingByUserId(string $userId, int $limit = 5): array
+    {
+        $this->db->query("
+            SELECT 
+                r.*,
+                t.nom_terrain,
+                t.ville,
+                t.adresse,
+                t.type_terrain
+            FROM Reservation r
+            JOIN Terrain t ON r.id_terrain = t.id_terrain
+            WHERE r.id_utilisateur = :user_id
+            AND r.date_reservation >= CURDATE()
+            AND r.statut_paiement != 'annule'
+            ORDER BY r.date_reservation ASC, r.heure_debut ASC
+            LIMIT :limit
+        ");
+        
+        $this->db->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $this->db->bindValue(':limit', $limit, PDO::PARAM_INT);
+        
+        return $this->db->results();
+    }
+
+    /**
+     * Delete reservation
+     * 
+     * @param string $id Reservation ID
+     * @return bool Success status
+     */
+    public function delete(string $id): bool
+    {
+        $this->db->query("DELETE FROM Reservation WHERE id_reservation = :id");
+        $this->db->bindValue(':id', $id, PDO::PARAM_INT);
+        
+        return $this->db->execute();
+    }
+
+    /**
+     * Get total reservations count
+     * 
+     * @return int Total count
+     */
+    public function getTotalCount(): int
+    {
+        try {
+            $this->db->query("SELECT COUNT(*) as total FROM Reservation");
+            $result = $this->db->result();
+            
+            return $result ? intval($result->total) : 0;
+        } catch (Exception $e) {
+            error_log("Error getting total count: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Get reservations statistics
+     * 
+     * @return array Statistics data
+     */
+    public function getStatistics(): array
+    {
+        $this->db->query("
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN statut_paiement = 'paye' THEN 1 ELSE 0 END) as payes,
+                SUM(CASE WHEN statut_paiement = 'en_attente' THEN 1 ELSE 0 END) as en_attente,
+                SUM(CASE WHEN statut_paiement = 'annule' THEN 1 ELSE 0 END) as annules,
+                SUM(CASE WHEN statut_paiement = 'paye' THEN prix_total ELSE 0 END) as revenue_total
+            FROM Reservation
+        ");
+        
+        return (array) $this->db->result();
+    }
+}
