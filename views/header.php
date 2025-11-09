@@ -6,7 +6,6 @@
     <title><?= $title ?? 'FootBooking' ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* Styles communs pour le header/navbar */
         * {
             margin: 0;
             padding: 0;
@@ -111,8 +110,6 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
         }
-
-        /* User Menu Styles */
         .user-menu {
             position: relative;
         }
@@ -192,8 +189,6 @@
             border: none;
             border-top: 1px solid #e5e7eb;
         }
-
-        /* Badge Admin */
         .admin-badge {
             background: #dc2626;
             color: white;
@@ -262,12 +257,17 @@
                         </a>
                     </li>
                 <?php else: ?>
-                    <!-- Menu pour les autres utilisateurs -->
                     <li><a href="<?= UrlHelper::url('/') ?>">Accueil</a></li>
                     <li><a href="<?= UrlHelper::url('terrains') ?>">Liste des terrains</a></li>
                     <?php if (isset($currentUser)): ?>
                         <li><a href="<?= UrlHelper::url('reservation') ?>">Réserver un terrain</a></li>
                         <?php if ($currentUser->role === 'client'): ?>
+                            <li>
+                                <a href="<?= UrlHelper::url('tournoi/index') ?>" 
+                                   class="<?= strpos($_SERVER['REQUEST_URI'], '/tournoi') !== false ? 'active' : '' ?>">
+                                    Tournois
+                                </a>
+                            </li>
                             <li><a href="<?= UrlHelper::url('mes-reservations') ?>">Mes réservations</a></li>
                         <?php endif; ?>
                     <?php endif; ?>
@@ -293,6 +293,9 @@
                             <?php if ($currentUser->role === 'client'): ?>
                                 <a href="<?= UrlHelper::url('mes-reservations') ?>">
                                     <i class="fa-solid fa-calendar-check"></i> Mes réservations
+                                </a>
+                                <a href="<?= UrlHelper::url('tournoi/mesparticipations') ?>">
+                                    <i class="fa-solid fa-trophy"></i> Mes tournois
                                 </a>
                             <?php endif; ?>
                             <?php if ($currentUser->role === 'admin'): ?>
@@ -325,12 +328,21 @@
         </nav>
     </header>
 
+    <!-- Contenu de la page -->
+    <?php 
+    $viewFile = __DIR__ . '/' . $viewName . '.php';
+    if (file_exists($viewFile)) {
+        require_once $viewFile;
+    } else {
+        echo "<p style='padding: 2rem; text-align: center; color: red;'>Vue introuvable : $viewName</p>";
+    }
+    ?>
+
     <script>
         function toggleUserMenu() {
             const dropdown = document.getElementById('userDropdown');
             dropdown.classList.toggle('show');
         }
-
         // Fermer le menu si on clique en dehors
         document.addEventListener('click', function(event) {
             const userMenu = document.querySelector('.user-menu');
@@ -342,3 +354,5 @@
             }
         });
     </script>
+</body>
+</html>
