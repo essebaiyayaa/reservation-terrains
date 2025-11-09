@@ -98,6 +98,17 @@ $routes = [
     'gerant/terrains' => ['controller' => 'GerantController', 'method' => 'terrains'],
     'gerant/reservations' => ['controller' => 'GerantController', 'method' => 'reservations'],
 
+    // ==================== TOURNOI ROUTES ====================
+    // LIST: Afficher tous les tournois disponibles
+    'tournoi' => ['controller' => 'TournoiController', 'method' => 'index'],
+    'tournoi/index' => ['controller' => 'TournoiController', 'method' => 'index'],
+    // PARTICIPER: Afficher le formulaire de participation
+    'tournoi/participer' => ['controller' => 'TournoiController', 'method' => 'participer'],
+    // INSCRIRE: Traiter l'inscription d'une équipe (POST)
+    'tournoi/inscrire' => ['controller' => 'TournoiController', 'method' => 'inscrire'],
+    // MES PARTICIPATIONS: Afficher les tournois du client
+    'tournoi/mesparticipations' => ['controller' => 'TournoiController', 'method' => 'mesparticipations'],
+
     // ==================== TEST ROUTES (Development) ====================
     // À supprimer en production
     'books' => ['controller' => 'BookController', 'method' => 'index'],
