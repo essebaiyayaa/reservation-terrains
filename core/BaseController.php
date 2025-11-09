@@ -28,7 +28,7 @@ abstract class BaseController
      * 
      * @return void
      */
-    abstract protected function index(): void;
+    abstract public function index(): void;
 
     /**
      * Display a single resource by its unique ID.
@@ -36,7 +36,7 @@ abstract class BaseController
      * @param string $id The unique identifier of the resource.
      * @return void
      */
-    abstract protected function show(string $id): void;
+    abstract public function show(string $id): void;
 
     /**
      * Show the form for creating a new resource.
@@ -44,7 +44,7 @@ abstract class BaseController
      * 
      * @return void
      */
-    abstract protected function create(): void;
+    abstract public function create(): void;
 
     /**
      * Show the form for editing an existing resource.
@@ -54,7 +54,7 @@ abstract class BaseController
      * 
      * @return void
      */
-    abstract protected function edit(string $id): void;
+    abstract public function edit(string $id): void;
 
     /**
      * Delete a resource by its unique ID.
@@ -64,7 +64,7 @@ abstract class BaseController
      * @param string $id The unique identifier of the resource to delete.
      * @return void
      */
-    abstract protected function delete(string $id): void;
+    abstract public function delete(string $id): void;
 
     /**
      * Dynamically loads a model class.
