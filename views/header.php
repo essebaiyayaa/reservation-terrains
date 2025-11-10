@@ -44,6 +44,10 @@
             color: #16a34a;
             text-decoration: none;
         }
+        
+        .logo .role-badge {
+            display: none;
+        }
 
         .nav-links {
             display: flex;
@@ -70,6 +74,11 @@
         .nav-links a.active {
             color: #16a34a;
             font-weight: 600;
+        }
+
+        /* Cacher les icônes dans les liens admin */
+        .admin-nav-links a i {
+            display: none;
         }
 
         .auth-buttons {
@@ -110,6 +119,7 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
         }
+
         .user-menu {
             position: relative;
         }
@@ -189,14 +199,27 @@
             border: none;
             border-top: 1px solid #e5e7eb;
         }
-        .admin-badge {
-            background: #dc2626;
-            color: white;
+
+        /* Badge de rôle dynamique */
+        .role-badge {
             padding: 0.25rem 0.75rem;
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
             margin-left: 0.5rem;
+            color: white;
+        }
+
+        .role-badge.admin {
+            background: #dc2626;
+        }
+
+        .role-badge.client {
+            background: #16a34a;
+        }
+
+        .role-badge.gerant {
+            background: #16a34a;
         }
 
         @media (max-width: 768px) {
@@ -213,14 +236,24 @@
             <a href="<?= UrlHelper::url('/') ?>" class="logo">
                 <i class="fas fa-futbol"></i>
                 FootBooking
-                <?php if (isset($currentUser) && $currentUser->role === 'admin'): ?>
-                    <span class="admin-badge">ADMIN</span>
+                <?php if (isset($currentUser)): ?>
+                    <span class="role-badge <?= strtolower($currentUser->role === 'gerant_terrain' ? 'gerant' : $currentUser->role) ?>">
+                        <?php 
+                            if ($currentUser->role === 'admin') {
+                                echo 'ADMIN';
+                            } elseif ($currentUser->role === 'gerant_terrain') {
+                                echo 'GÉRANT';
+                            } else {
+                                echo 'CLIENT';
+                            }
+                        ?>
+                    </span>
                 <?php endif; ?>
             </a>
             
-            <ul class="nav-links">
+            <ul class="nav-links <?= isset($currentUser) && $currentUser->role === 'admin' ? 'admin-nav-links' : '' ?>">
                 <?php if (isset($currentUser) && $currentUser->role === 'admin'): ?>
-                    <!-- Menu spécifique pour l'admin -->
+                    <!-- Menu spécifique pour l'admin (sans icônes) -->
                     <li>
                         <a href="<?= UrlHelper::url('admin') ?>" 
                            class="<?= strpos($_SERVER['REQUEST_URI'], 'admin/dashboard') !== false && !strpos($_SERVER['REQUEST_URI'], '/admin/terrains') && !strpos($_SERVER['REQUEST_URI'], '/admin/reservations') && !strpos($_SERVER['REQUEST_URI'], '/admin/gerants') ? 'active' : '' ?>">
@@ -247,6 +280,13 @@
                            class="<?= strpos($_SERVER['REQUEST_URI'], '/admin/reservations') !== false ? 'active' : '' ?>">
                             <i class="fas fa-calendar-alt"></i>
                             Toutes les réservations
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= UrlHelper::url('admin/tournois') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], '/admin/tournois') !== false ? 'active' : '' ?>">
+                            <i class="fas fa-trophy"></i>
+                            Tous les tournois
                         </a>
                     </li>
                     <li>
@@ -281,9 +321,6 @@
                         <button class="user-button" onclick="toggleUserMenu()">
                             <i class="fa-solid fa-user-circle"></i>
                             <?php echo htmlspecialchars($currentUser->prenom ?? 'User'); ?>
-                            <?php if ($currentUser->role === 'admin'): ?>
-                                <i class="fas fa-crown" style="font-size: 0.8rem;"></i>
-                            <?php endif; ?>
                             <i class="fa-solid fa-chevron-down"></i>
                         </button>
                         <div class="dropdown-menu" id="userDropdown">
