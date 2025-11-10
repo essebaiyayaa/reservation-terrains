@@ -46,7 +46,7 @@ $routes = [
     // Gestion des gérants
     'admin/gerants' => ['controller' => 'AdminController', 'method' => 'gerants'],
     'admin/gerant/create' => ['controller' => 'AdminController', 'method' => 'createGerant'],
-    
+     'admin/tournois' => ['controller' => 'AdminController', 'method' => 'tournois'],
     'admin/gerant/delete/{id}' => ['controller' => 'AdminController', 'method' => 'deleteGerant'],
 
     // ==================== TERRAIN ROUTES ====================
