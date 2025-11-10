@@ -253,7 +253,13 @@ require_once __DIR__ . '/../header.php';
     <h1><i class="fa-solid fa-trophy"></i> Tournois Disponibles</h1>
     <p>Inscrivez votre équipe et participez aux tournois de football !</p>
 </section>
-
+<?php if (!empty($tournois)): ?>
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="<?= UrlHelper::url('tournoi/mesparticipations') ?>" class="btn btn-success" style="display: inline-block; max-width: 300px;">
+                    <i class="fa-solid fa-list"></i> Voir mes participations
+                </a>
+            </div>
+<?php endif; ?>
 <section class="tournois-section">
     <div class="tournois-container">
         
@@ -374,14 +380,6 @@ require_once __DIR__ . '/../header.php';
                         </div>
                     </div>
                 <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if (!empty($tournois)): ?>
-            <div style="text-align: center; margin-top: 3rem;">
-                <a href="<?= UrlHelper::url('tournoi/mesparticipations') ?>" class="btn btn-success" style="display: inline-block; max-width: 300px;">
-                    <i class="fa-solid fa-list"></i> Voir mes participations
-                </a>
             </div>
         <?php endif; ?>
     </div>
