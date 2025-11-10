@@ -61,6 +61,8 @@ class AuthController extends BaseController {
      */
     public function create(): void {
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
+
+            Utils::verifyRecaptcha($_POST['g-recaptcha-response'], RECAPTCHA_SECRET_KEY);
             
             /** @var UserModel $userModel */
             $userModel = $this->loadModel("UserModel");
@@ -160,8 +162,12 @@ class AuthController extends BaseController {
     public function login(): void {
         if ($_SERVER['REQUEST_METHOD'] == "POST"){
 
+            Utils::verifyRecaptcha($_POST['g-recaptcha-response'], RECAPTCHA_SECRET_KEY);
+
             /** @var UserModel $userModel */
             $userModel = $this->loadModel("UserModel");
+
+            
 
             $email          = trim($_POST["email"] ?? '');
             $mot_de_passe   = $_POST["mot_de_passe"] ?? '';

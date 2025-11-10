@@ -246,6 +246,10 @@ $title = 'Connexion - FootBooking';
             </div>
         </div>
 
+        <div class="recaptcha-wrapper">
+            <div class="g-recaptcha" data-sitekey="<?php echo RECAPTCHA_SITE_KEY; ?>"></div>
+        </div>
+
         <button type="submit" class="btn-submit">
             <i class="fas fa-sign-in-alt"></i> Se connecter
         </button>
@@ -262,6 +266,7 @@ $title = 'Connexion - FootBooking';
     </div>
 </div>
 
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <script>
     function togglePassword(fieldId) {
         const passwordField = document.getElementById(fieldId);

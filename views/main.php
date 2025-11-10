@@ -15,8 +15,7 @@
     <?php require_once __DIR__ . '/../views/' . $viewName . '.php'; ?>
     <!-- Footer -->
     <?php require_once __DIR__ . '/../views/footer.php'; ?>
-
-    <!-- <script src="https://www.google.com/recaptcha/api.js" async defer></script> -->
+  
 </body>
 
 </html>

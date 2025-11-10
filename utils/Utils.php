@@ -396,6 +396,8 @@
             string $secretKey,
             string $verifyUrl = 'https://www.google.com/recaptcha/api/siteverify'
         ): void {
+
+           
            
             if (empty($recaptchaResponse)) {
                 http_response_code(400);
@@ -427,6 +429,8 @@
                 echo 'Captcha verification failed.';
                 exit;
             }
+
+            
         }
         
     }
