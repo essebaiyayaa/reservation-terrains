@@ -337,4 +337,133 @@ class AdminController extends BaseController
             'total' => $total
         ], 'Toutes les Réservations - Admin');
     }
+/**
+ * View all tournaments 
+ */
+public function tournois(): void
+{
+    try {
+        // Créer une instance de PDODatabase
+        $db = new PDODatabase();
+        
+        // Récupérer les filtres
+        $filters = [
+            'statut' => $_GET['statut'] ?? '',
+            'ville' => $_GET['ville'] ?? ''
+        ];
+
+      
+        $query = "SELECT 
+                    t.*,
+                    ter.nom_terrain,
+                    ter.ville,
+                    u.prenom as prenom_gerant,
+                    u.nom as nom_gerant,
+                    u.email as email_gerant,
+                    (t.nombre_max_equipes - COALESCE(
+                        (SELECT COUNT(*) FROM Equipe WHERE id_tournoi = t.id_tournoi), 
+                        0
+                    )) as places_disponibles
+                  FROM Tournoi t
+                  LEFT JOIN terrain ter ON t.id_terrain = ter.id_terrain
+                  LEFT JOIN utilisateur u ON t.id_gerant = u.id_utilisateur
+                  WHERE 1=1";
+        
+       
+        if (!empty($filters['statut'])) {
+            $query .= " AND LOWER(t.statut) = LOWER(:statut)";
+        }
+        
+        if (!empty($filters['ville'])) {
+            $query .= " AND ter.ville = :ville";
+        }
+        
+        $query .= " ORDER BY t.date_debut DESC";
+        
+      
+        error_log("=== ADMIN TOURNOIS - SQL QUERY ===");
+        error_log($query);
+        
+ 
+        $db->query($query);
+        
+      
+        if (!empty($filters['statut'])) {
+            $db->bindValue(':statut', $filters['statut'], PDO::PARAM_STR);
+            error_log("Filtre statut: " . $filters['statut']);
+        }
+        
+        if (!empty($filters['ville'])) {
+            $db->bindValue(':ville', $filters['ville'], PDO::PARAM_STR);
+            error_log("Filtre ville: " . $filters['ville']);
+        }
+        
+        
+        $tournois = $db->results();
+        
+        
+        $db->query("SELECT DISTINCT ville FROM terrain WHERE ville IS NOT NULL AND ville != '' ORDER BY ville");
+        $villesResult = $db->results();
+        
+      
+        $villes = array_map(function($v) {
+            return $v->ville;
+        }, $villesResult);
+        
+
+        error_log("=== RÉSULTATS ===");
+        error_log(" Nombre de tournois trouvés: " . count($tournois));
+        error_log(" Nombre de villes: " . count($villes));
+        
+        if (!empty($tournois)) {
+            error_log("Exemple de tournoi: " . $tournois[0]->nom_tournoi);
+            error_log("   - Statut: " . $tournois[0]->statut);
+            error_log("   - Places dispo: " . $tournois[0]->places_disponibles);
+        } else {
+            error_log(" Aucun tournoi trouvé avec ces critères");
+        }
+  
+        if (!empty($tournois)) {
+            $_SESSION['success'] = count($tournois) . " tournoi(s) trouvé(s)";
+        }
+        
+  
+        $this->renderView('Admin/Tournois', [
+            'currentUser' => $this->currentUser,
+            'tournois' => $tournois,
+            'villes' => $villes,
+            'filters' => $filters
+        ], 'Gestion des Tournois - Admin');
+        
+    } catch (PDOException $e) {
+        error_log("ERREUR PDO TOURNOIS ADMIN ");
+        error_log("Message: " . $e->getMessage());
+        error_log("Code: " . $e->getCode());
+        error_log("File: " . $e->getFile() . " (ligne " . $e->getLine() . ")");
+        error_log("Trace: " . $e->getTraceAsString());
+        
+        $_SESSION['error'] = "Erreur de base de données: " . $e->getMessage();
+        
+        $this->renderView('Admin/Tournois', [
+            'currentUser' => $this->currentUser,
+            'tournois' => [],
+            'villes' => [],
+            'filters' => []
+        ], 'Gestion des Tournois - Admin');
+        
+    } catch (Exception $e) {
+        error_log(" ERREUR GÉNÉRALE TOURNOIS ADMIN ");
+        error_log("Message: " . $e->getMessage());
+        error_log("Trace: " . $e->getTraceAsString());
+        
+        $_SESSION['error'] = "Erreur: " . $e->getMessage();
+        
+        $this->renderView('Admin/Tournois', [
+            'currentUser' => $this->currentUser,
+            'tournois' => [],
+            'villes' => [],
+            'filters' => []
+        ], 'Gestion des Tournois - Admin');
+    }
+}
 }
