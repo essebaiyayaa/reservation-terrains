@@ -217,7 +217,7 @@ class AuthController extends BaseController {
                             header('Location: ' . UrlHelper::url('dashboard/admin'));
                             break;
                         case 'gerant_terrain':
-                            header('Location: ' . UrlHelper::url('dashboard/gerant'));
+                            header('Location: ' . UrlHelper::url('gerant/dashboard'));
                             break;
                         case 'client':
                         default:

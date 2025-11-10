@@ -49,6 +49,8 @@ $routes = [
      'admin/tournois' => ['controller' => 'AdminController', 'method' => 'tournois'],
     'admin/gerant/delete/{id}' => ['controller' => 'AdminController', 'method' => 'deleteGerant'],
 
+
+
     // ==================== TERRAIN ROUTES ====================
     
     // Public routes - Consultation des terrains
@@ -96,6 +98,9 @@ $routes = [
     // ==================== GERANT ROUTES (optionnel) ====================
     // Routes spécifiques gérant si besoin
     'gerant/terrains' => ['controller' => 'GerantController', 'method' => 'terrains'],
+
+    'gerant/dashboard' => ['controller' => 'GerantController', 'method' => 'index'],
+
     'gerant/reservations' => ['controller' => 'GerantController', 'method' => 'reservations'],
 
     // ==================== TOURNOI ROUTES ====================
