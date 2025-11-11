@@ -207,16 +207,7 @@
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <a href="<?= UrlHelper::url('admin') ?>" class="logo">
-                <i class="fas fa-shield-alt"></i> FootBooking
-            </a>
-            <a href="<?= UrlHelper::url('admin') ?>" style="color: #6b7280; text-decoration: none;">
-                <i class="fas fa-arrow-left"></i> Retour
-            </a>
-        </nav>
-    </header>
+
 
     <div class="container">
         <a href="<?= UrlHelper::url('admin/terrains') ?>" class="back-btn">
