@@ -215,7 +215,7 @@ class AuthController extends BaseController {
                     // Redirection basée sur le rôle
                     switch($user->role) {
                         case 'admin':
-                            header('Location: ' . UrlHelper::url('dashboard/admin'));
+                            header('Location: ' . UrlHelper::url('/admin'));
                             break;
                         case 'gerant_terrain':
                             header('Location: ' . UrlHelper::url('gerant/dashboard'));
