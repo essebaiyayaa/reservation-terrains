@@ -207,6 +207,55 @@ class ReservationModel extends BaseModel
         return $result ?: null;
     }
 
+
+
+
+
+    public function getUserReservations(int $user_id): array
+    {
+        try {
+            $this->db->query("
+                SELECT 
+                    r.id_reservation,
+                    r.date_reservation,
+                    r.heure_debut,
+                    r.heure_fin,
+                    r.commentaires,
+                    r.statut,
+                    r.date_creation,
+                    t.nom_terrain,
+                    t.ville,
+                    t.taille,
+                    t.type,
+                    t.prix_heure,
+                    GROUP_CONCAT(o.nom_option SEPARATOR ', ') AS options
+                FROM Reservation r
+                JOIN Terrain t ON r.id_terrain = t.id_terrain
+                LEFT JOIN Reservation_Option ro ON r.id_reservation = ro.id_reservation
+                LEFT JOIN OptionSupplementaire o ON ro.id_option = o.id_option
+                WHERE r.id_utilisateur = :id
+                GROUP BY r.id_reservation
+                ORDER BY r.date_reservation DESC, r.heure_debut DESC
+            ");
+            
+            $this->db->bindValue(':id', $user_id, PDO::PARAM_INT);
+            $this->db->execute();
+            return $this->db->results(); 
+
+        } catch (Exception $e) {
+            error_log("Error fetching user reservations: " . $e->getMessage());
+            return [];
+        }
+    }
+
+
+
+
+
+
+
+
+
     /**
      * Update reservation
      * 

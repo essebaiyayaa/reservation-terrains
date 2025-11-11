@@ -86,7 +86,7 @@ $routes = [
     'reservation/cancel/{id}' => ['controller' => 'ReservationController', 'method' => 'cancel'],
     
     // Liste des réservations par utilisateur
-    'mes-reservations' => ['controller' => 'ReservationController', 'method' => 'index'],
+    'mes-reservations' => ['controller' => 'ClientController', 'method' => 'myReservations'],
 
     // ==================== DASHBOARD ROUTES ====================
     // Dashboards spécifiques par rôle

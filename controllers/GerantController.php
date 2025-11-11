@@ -45,6 +45,7 @@ class GerantController extends BaseController {
 
 
         $this->renderView('Gerant/Dashboard',  [
+            'currentUser' => $this->currentUser,
             'gerant' => $gerant,
             'stats' => $stats
         ],);
