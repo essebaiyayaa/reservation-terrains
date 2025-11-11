@@ -536,10 +536,13 @@
             <?php endforeach; ?>
           </select>
         </div>
-
-        <button type="button" class="btn-search" onclick="searchTerrains()">
-          <i class="fas fa-search"></i> Rechercher
-        </button>
+              <form method="POST">
+                <input type="hidden" name="search" value="yes"/>
+                <button type="submit" class="btn-search" onclick="">
+                <i class="fas fa-search"></i> Rechercher
+                </button>
+              </form>
+        
       </div>
 
       <!-- Liste des terrains -->
@@ -677,7 +680,7 @@
   </div>
 </div>
 
-<script>
+<!-- <script>
   // Variables globales pour le polling
   let pollingInterval = null;
   let currentDate = null;
@@ -1271,4 +1274,4 @@
     updateCart();
     updateSubmitButton();
   });
-</script>
+</script> -->

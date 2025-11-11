@@ -80,32 +80,40 @@ class ClientController extends BaseController{
 
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST'){
-            $date_reservation = $_POST['date_reservation'];
-            $heure_debut = $_POST['heure_debut'];
-            $heure_fin = date('H:i:s', strtotime($heure_debut) + 3600); 
-            $id_terrain = $_POST['id_terrain'] ?? $_GET['id'];
-            $options_selectionnees = $_POST['options'] ?? [];
-            $commentaires = $_POST['commentaires'] ?? '';
+            
 
-            $ret = $this->terrainModel->reserverTerrain(
-                $id_terrain, 
-                $date_reservation, 
-                $heure_debut, 
-                $heure_fin, 
-                $commentaires, 
-                $options_selectionnees 
-            );
+            if($_POST['search'] == 'yes'){
+                $terrains = $this->terrainModel->getTerrainsByTypeAndTaille('Gazon naturel', 'Grand terrain');
 
-            if (is_int($ret) && $ret > 0) {
-    
-                header("Location: facture.php?id=" . $ret);
-                exit;
+                echo var_dump($terrains);
 
-            } else {
-    
-                
+            }else{
+                $date_reservation = $_POST['date_reservation'];
+                $heure_debut = $_POST['heure_debut'];
+                $heure_fin = date('H:i:s', strtotime($heure_debut) + 3600); 
+                $id_terrain = $_POST['id_terrain'] ?? $_GET['id'];
+                $options_selectionnees = $_POST['options'] ?? [];
+                $commentaires = $_POST['commentaires'] ?? '';
+
+                $ret = $this->terrainModel->reserverTerrain(
+                    $id_terrain, 
+                    $date_reservation, 
+                    $heure_debut, 
+                    $heure_fin, 
+                    $commentaires, 
+                    $options_selectionnees 
+                );
+
+                if (is_int($ret) && $ret > 0) {
+        
+                    header("Location: facture/id/" . $ret);
+                    exit;
+
+                } else {
+        
+                    
+                }
             }
-
 
         }
 
@@ -131,6 +139,38 @@ class ClientController extends BaseController{
 
 
 
+    }
+
+    public function facturer($id){
+
+        $reservationObj = $this->reservationModel->getReservationDetails((int)$id, (int)$this->currentUser->user_id);
+        $options = $this->reservationModel->getReservationOptions((int)$id);
+
+        $all_options = [];
+
+        foreach ($options as $option) {
+            $all_options[] = (array)$option;
+        }
+
+        $totals = $this->reservationModel->calculateTotal($reservationObj, $options);
+
+
+        $reservation = (array)$reservationObj;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST'){
+
+            Utils::generateInvoicePDF($reservation, $all_options, $totals['total_options'], $totals['total_general'] );
+        }
+        
+        
+        
+        $this->renderView('Client/Facture', [
+            'currentUser' => $this->currentUser,
+            'reservation' => $reservation,
+            'total_general' => $totals['total_general'],
+            'total_options' => $totals['total_options'],
+            'options' => $all_options
+        ]);
     }
 
 

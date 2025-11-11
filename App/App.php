@@ -93,7 +93,7 @@ class App
             $this->controller = new $this->controller;
 
         
-
+            
             
             call_user_func_array([$this->controller, $this->method], $this->params);
 

@@ -350,4 +350,42 @@ class TerrainModel extends BaseModel
 
 
 
+    public function getTerrainsByTypeAndTaille(?string $type = null, ?string $taille = null): array
+    {
+        try {
+            $sql = "SELECT * FROM terrain WHERE 1=1";
+
+            
+            if ($type !== null) {
+                $sql .= " AND type = :type";
+            }
+
+            if ($taille !== null) {
+                $sql .= " AND taille = :taille";
+            }
+
+            $sql .= " ORDER BY nom_terrain";
+
+            $this->db->query($sql);
+
+            
+            if ($type !== null) {
+                $this->db->bindValue(':type', $type, PDO::PARAM_STR);
+            }
+            if ($taille !== null) {
+                $this->db->bindValue(':taille', $taille, PDO::PARAM_STR);
+            }
+
+            
+            return $this->db->results();
+
+        } catch (Exception $e) {
+            error_log("Erreur getTerrains: " . $e->getMessage());
+            return []; 
+        }
+    }
+
+
+
+
 }

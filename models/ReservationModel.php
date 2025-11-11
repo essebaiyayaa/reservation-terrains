@@ -521,4 +521,74 @@ class ReservationModel extends BaseModel
         
         return (array) $this->db->result();
     }
+
+
+
+
+
+
+
+    /**
+     * Get reservation details along with terrain and user info
+     */
+    public function getReservationDetails(int $id_reservation, int $id_utilisateur): ?object {
+        try {
+            $this->db->query("
+                SELECT r.*, 
+                       t.nom_terrain, t.adresse, t.ville, t.prix_heure, 
+                       u.nom AS user_nom, u.prenom AS user_prenom, u.email, u.telephone
+                FROM reservation r
+                JOIN terrain t ON r.id_terrain = t.id_terrain
+                JOIN utilisateur u ON r.id_utilisateur = u.id_utilisateur
+                WHERE r.id_reservation = :id_reservation
+                  AND r.id_utilisateur = :id_utilisateur
+            ");
+            $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+            $this->db->bindValue(':id_utilisateur', $id_utilisateur, PDO::PARAM_INT);
+
+            return $this->db->result();
+        } catch (Exception $e) {
+            error_log("Erreur getReservationDetails: " . $e->getMessage());
+            return null;
+        }
+    }
+
+
+    public function getReservationOptions(int $id_reservation): array {
+        try {
+            $this->db->query("
+                SELECT os.nom_option, os.prix
+                FROM reservation_option ro
+                JOIN optionsupplementaire os ON ro.id_option = os.id_option
+                WHERE ro.id_reservation = :id_reservation
+            ");
+            $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+
+            return $this->db->results();
+        } catch (Exception $e) {
+            error_log("Erreur getReservationOptions: " . $e->getMessage());
+            return [];
+        }
+    }
+
+
+    /**
+     * Calculate total price including options
+     */
+    public function calculateTotal(object $reservation, array $options): array
+    {
+        $total_options = 0.0;
+
+        foreach ($options as $option) {
+            $total_options += (float) $option->prix;
+        }
+
+       
+        $total_general = (float) $reservation->prix_heure + $total_options;
+
+        return [
+            'total_options' => $total_options,
+            'total_general' => $total_general
+        ];
+    }
 }
