@@ -25,6 +25,7 @@ class ClientController extends BaseController{
 
         $this->currentUser = $decoded;
         $this->userModel = $this->loadModel('UserModel');
+        $this->terrainModel = $this->loadModel('TerrainModel');
         $this->reservationModel = $this->loadModel('ReservationModel');
     }
 
@@ -77,6 +78,37 @@ class ClientController extends BaseController{
 
     public function faireReservation(){
 
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST'){
+            $date_reservation = $_POST['date_reservation'];
+            $heure_debut = $_POST['heure_debut'];
+            $heure_fin = date('H:i:s', strtotime($heure_debut) + 3600); 
+            $id_terrain = $_POST['id_terrain'] ?? $_GET['id'];
+            $options_selectionnees = $_POST['options'] ?? [];
+            $commentaires = $_POST['commentaires'] ?? '';
+
+            $ret = $this->terrainModel->reserverTerrain(
+                $id_terrain, 
+                $date_reservation, 
+                $heure_debut, 
+                $heure_fin, 
+                $commentaires, 
+                $options_selectionnees 
+            );
+
+            if (is_int($ret) && $ret > 0) {
+    
+                header("Location: facture.php?id=" . $ret);
+                exit;
+
+            } else {
+    
+                
+            }
+
+
+        }
+
         $user = [
             'prenom' => $this->currentUser->prenom,
             'email' => $this->currentUser->email,
@@ -86,16 +118,19 @@ class ClientController extends BaseController{
         ];
         
         
-        // $types = $this->terrainModel->getTypes();
-        // $tailles = $this->terrainModel->getTailles();
+        $types = $this->terrainModel->getTypes();
+        $tailles = $this->terrainModel->getTailles();
 
-        // echo var_dump($types);
-        // echo var_dump($tailles);
-
+       
         $this->renderView('Client/Reservation', [
             'currentUser' => $this->currentUser,
-            'user'=> $user
+            'user'=> $user,
+            'tailles' => $tailles,
+            'types' => $types
         ]);
+
+
+
     }
 
 

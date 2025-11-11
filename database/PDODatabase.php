@@ -57,6 +57,50 @@ class PDODatabase {
         }
     }
 
+
+    /**
+     * Starts a transaction.
+     *
+     * @return void
+    */
+    public function beginTransaction(): void {
+        $this->handler->beginTransaction();
+    }
+
+    /**
+     * Commits the current transaction.
+     *
+     * @return void
+     */
+    public function commit(): void {
+        $this->handler->commit();
+    }
+
+    /**
+     * Rolls back the current transaction.
+     *
+     * @return void
+     */
+    public function rollBack(): void {
+        $this->handler->rollBack();
+    }
+
+
+    /**
+     * Returns the ID of the last inserted row.
+     *
+     * @return string The last insert ID.
+     */
+    public function lastInsertId(): string {
+        return $this->handler->lastInsertId();
+    }
+
+
+
+
+
+
+
     /**
      * Prepares an SQL query for execution.
      * 
@@ -75,7 +119,7 @@ class PDODatabase {
      * @param int $type The PDO data type (e.g., PDO::PARAM_INT, PDO::PARAM_STR).
      * @return void
      */
-    public function bindValue(string $param, $value, int $type): void {
+    public function bindValue(string $param, $value, ?int $type = null): void {
         $this->stmt->bindValue($param, $value, $type);
     }
 

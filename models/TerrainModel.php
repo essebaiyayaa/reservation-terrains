@@ -224,16 +224,130 @@ class TerrainModel extends BaseModel
     public function getTailles(): array
     {
         $this->db->query("SELECT DISTINCT taille FROM terrain ORDER BY taille");
-        $this->db->execute();
-        return $this->db->results();
+        return array_map(fn($r) => $r->taille, $this->db->results());
     }
 
     public function getTypes(): array
     {
         $this->db->query("SELECT DISTINCT type FROM terrain ORDER BY type");
-        $this->db->execute();
-        return $this->db->results();
+        return array_map(fn($r) => $r->type, $this->db->results());
     }
+
+
+
+    public function reserverTerrain(
+        int $id_terrain, 
+        string $date_reservation, 
+        string $heure_debut, 
+        string $heure_fin, 
+        string $commentaires, 
+        array $options_selectionnees = []
+    ): ?int 
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // 1️ Vérifier si le créneau est déjà réservé
+            $this->db->query("
+                SELECT id_reservation 
+                FROM reservation
+                WHERE id_terrain = :id_terrain
+                AND date_reservation = :date_reservation
+                AND heure_debut = :heure_debut
+                AND statut != 'Annulée'
+                FOR UPDATE
+            ");
+            $this->db->bindValue(':id_terrain', $id_terrain, PDO::PARAM_INT);
+            $this->db->bindValue(':date_reservation', $date_reservation, PDO::PARAM_STR);
+            $this->db->bindValue(':heure_debut', $heure_debut, PDO::PARAM_STR);
+            $existing = $this->db->result();
+
+            if ($existing) {
+                $this->db->rollBack();
+                return null; // Créneau déjà réservé
+            }
+
+            // 2️ Récupérer le prix du terrain
+            $this->db->query("SELECT prix_heure FROM terrain WHERE id_terrain = :id_terrain");
+            $this->db->bindValue(':id_terrain', $id_terrain, PDO::PARAM_INT);
+            $terrain = $this->db->result();
+
+            if (!$terrain) {
+                throw new Exception("Terrain introuvable");
+            }
+            $prix_terrain = $terrain->prix_heure;
+
+            // 3️ Calculer le prix des options
+            $prix_options = 0;
+            if (!empty($options_selectionnees)) {
+                $placeholders = implode(',', array_fill(0, count($options_selectionnees), '?'));
+                $this->db->query("SELECT SUM(prix) AS total FROM optionsupplementaire WHERE id_option IN ($placeholders)");
+                foreach ($options_selectionnees as $i => $id_option) {
+                    $this->db->bindValue($i + 1, $id_option, PDO::PARAM_INT); // positional binding
+                }
+                $result = $this->db->result();
+                $prix_options = $result->total ?? 0;
+            }
+
+            // 4️ Calculer le prix total
+            $prix_total = $prix_terrain + $prix_options;
+
+            // 5️ Insérer la réservation
+            $this->db->query("
+                INSERT INTO reservation (
+                    date_reservation,
+                    heure_debut,
+                    heure_fin,
+                    id_utilisateur,
+                    id_terrain,
+                    commentaires,
+                    statut,
+                    prix_total,
+                    statut_paiement
+                )
+                VALUES (
+                    :date_reservation,
+                    :heure_debut,
+                    :heure_fin,
+                    :id_utilisateur,
+                    :id_terrain,
+                    :commentaires,
+                    'Confirmée',
+                    :prix_total,
+                    'en_attente'
+                )
+            ");
+            $this->db->bindValue(':date_reservation', $date_reservation, PDO::PARAM_STR);
+            $this->db->bindValue(':heure_debut', $heure_debut, PDO::PARAM_STR);
+            $this->db->bindValue(':heure_fin', $heure_fin, PDO::PARAM_STR);
+            $this->db->bindValue(':id_utilisateur', $_SESSION['user_id'], PDO::PARAM_INT);
+            $this->db->bindValue(':id_terrain', $id_terrain, PDO::PARAM_INT);
+            $this->db->bindValue(':commentaires', $commentaires, PDO::PARAM_STR);
+            $this->db->bindValue(':prix_total', $prix_total);
+            $this->db->execute();
+
+            $id_reservation = (int)$this->db->lastInsertId();
+
+            // 6️ Insérer les options sélectionnées
+            if (!empty($options_selectionnees)) {
+                $this->db->query("INSERT INTO reservation_option (id_reservation, id_option) VALUES (:id_reservation, :id_option)");
+                foreach ($options_selectionnees as $id_option) {
+                    $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+                    $this->db->bindValue(':id_option', $id_option, PDO::PARAM_INT);
+                    $this->db->execute();
+                }
+            }
+
+            $this->db->commit();
+
+            return $id_reservation;
+
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e; 
+        }
+    }
+
 
 
 }
