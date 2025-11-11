@@ -218,4 +218,19 @@ class TerrainModel extends BaseModel
         $result = $this->db->result();
         return $result && $result->count > 0;
     }
+    public function getTerrainsByGerant(int $idGerant): array
+{
+    $this->db->query("
+        SELECT 
+            t.*
+        FROM {$this->table} t
+        WHERE t.id_utilisateur = :id_gerant
+        AND t.actif = 1
+        ORDER BY t.nom_terrain ASC
+    ");
+    
+    $this->db->bindValue(':id_gerant', $idGerant, PDO::PARAM_INT);
+    
+    return $this->db->results();
+}
 }

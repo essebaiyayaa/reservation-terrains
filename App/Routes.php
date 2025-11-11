@@ -104,15 +104,20 @@ $routes = [
     'gerant/reservations' => ['controller' => 'GerantController', 'method' => 'reservations'],
 
     // ==================== TOURNOI ROUTES ====================
-    // LIST: Afficher tous les tournois disponibles
+    
+    // Public / Client Routes
     'tournoi' => ['controller' => 'TournoiController', 'method' => 'index'],
     'tournoi/index' => ['controller' => 'TournoiController', 'method' => 'index'],
-    // PARTICIPER: Afficher le formulaire de participation
     'tournoi/participer' => ['controller' => 'TournoiController', 'method' => 'participer'],
-    // INSCRIRE: Traiter l'inscription d'une équipe (POST)
     'tournoi/inscrire' => ['controller' => 'TournoiController', 'method' => 'inscrire'],
-    // MES PARTICIPATIONS: Afficher les tournois du client
     'tournoi/mesparticipations' => ['controller' => 'TournoiController', 'method' => 'mesparticipations'],
+    
+    // Gerant Routes - CRUD Operations
+    'tournoi/mestournois' => ['controller' => 'TournoiController', 'method' => 'mestournois'],
+    'tournoi/create' => ['controller' => 'TournoiController', 'method' => 'create'],
+    'tournoi/show' => ['controller' => 'TournoiController', 'method' => 'show'],
+    'tournoi/edit' => ['controller' => 'TournoiController', 'method' => 'edit'],
+    'tournoi/delete' => ['controller' => 'TournoiController', 'method' => 'delete'],
 
     // ==================== TEST ROUTES (Development) ====================
     // À supprimer en production

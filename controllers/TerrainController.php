@@ -474,4 +474,5 @@ public function create(): void
             echo json_encode(['success' => false, 'message' => 'Erreur lors de la suppression']);
         }
     }
+    
 }

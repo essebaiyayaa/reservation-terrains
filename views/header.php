@@ -253,7 +253,7 @@
             
             <ul class="nav-links <?= isset($currentUser) && $currentUser->role === 'admin' ? 'admin-nav-links' : '' ?>">
                 <?php if (isset($currentUser) && $currentUser->role === 'admin'): ?>
-                    <!-- Menu spécifique pour l'admin (sans icônes) -->
+                    <!-- ========== MENU ADMIN ========== -->
                     <li>
                         <a href="<?= UrlHelper::url('admin') ?>" 
                            class="<?= strpos($_SERVER['REQUEST_URI'], 'admin/dashboard') !== false && !strpos($_SERVER['REQUEST_URI'], '/admin/terrains') && !strpos($_SERVER['REQUEST_URI'], '/admin/reservations') && !strpos($_SERVER['REQUEST_URI'], '/admin/gerants') ? 'active' : '' ?>">
@@ -296,7 +296,40 @@
                             Gestion des gérants
                         </a>
                     </li>
+                
+                <?php elseif (isset($currentUser) && $currentUser->role === 'gerant_terrain'): ?>
+                    <!-- ========== MENU GERANT ========== -->
+                    <li><a href="<?= UrlHelper::url('/') ?>">Accueil</a></li>
+                    <li>
+                        <a href="<?= UrlHelper::url('dashboard/gerant') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], '/dashboard/gerant') !== false ? 'active' : '' ?>">
+                            Mon Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= UrlHelper::url('gerant/terrains') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], '/gerant/terrains') !== false ? 'active' : '' ?>">
+                            Mes terrains
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= UrlHelper::url('gerant/reservations') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], '/gerant/reservations') !== false ? 'active' : '' ?>">
+                            Mes réservations
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="<?= UrlHelper::url('tournoi/mestournois') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], '/tournoi/mestournois') !== false || 
+                                     strpos($_SERVER['REQUEST_URI'], '/tournoi/create') !== false || 
+                                     strpos($_SERVER['REQUEST_URI'], '/tournoi/edit') !== false ? 'active' : '' ?>">
+                            Mes tournois
+                        </a>
+                    </li>
+                    
                 <?php else: ?>
+                    <!-- ========== MENU CLIENT / PUBLIC ========== -->
                     <li><a href="<?= UrlHelper::url('/') ?>">Accueil</a></li>
                     <li><a href="<?= UrlHelper::url('terrains') ?>">Liste des terrains</a></li>
                     <?php if (isset($currentUser)): ?>
@@ -327,6 +360,7 @@
                             <a href="<?= UrlHelper::url('profile') ?>">
                                 <i class="fa-solid fa-user"></i> Mon profil
                             </a>
+                            
                             <?php if ($currentUser->role === 'client'): ?>
                                 <a href="<?= UrlHelper::url('mes-reservations') ?>">
                                     <i class="fa-solid fa-calendar-check"></i> Mes réservations
@@ -334,16 +368,25 @@
                                 <a href="<?= UrlHelper::url('tournoi/mesparticipations') ?>">
                                     <i class="fa-solid fa-trophy"></i> Mes tournois
                                 </a>
-                            <?php endif; ?>
-                            <?php if ($currentUser->role === 'admin'): ?>
+                            <?php elseif ($currentUser->role === 'gerant_terrain'): ?>
+                                <a href="<?= UrlHelper::url('dashboard/gerant') ?>">
+                                    <i class="fa-solid fa-gauge"></i> Dashboard
+                                </a>
+                                <a href="<?= UrlHelper::url('gerant/terrains') ?>">
+                                    <i class="fa-solid fa-map"></i> Mes terrains
+                                </a>
+                                <a href="<?= UrlHelper::url('gerant/reservations') ?>">
+                                    <i class="fa-solid fa-calendar-check"></i> Mes réservations
+                                </a>
+                                <a href="<?= UrlHelper::url('tournoi/mestournois') ?>">
+                                    <i class="fa-solid fa-trophy"></i> Mes tournois
+                                </a>
+                            <?php elseif ($currentUser->role === 'admin'): ?>
                                 <a href="<?= UrlHelper::url('admin') ?>">
                                     <i class="fa-solid fa-gauge"></i> Dashboard Admin
                                 </a>
-                            <?php elseif ($currentUser->role === 'gerant_terrain'): ?>
-                                <a href="<?= UrlHelper::url('dashboard/gerant') ?>">
-                                    <i class="fa-solid fa-gauge"></i> Dashboard Gérant
-                                </a>
                             <?php endif; ?>
+                            
                             <hr>
                             <a href="<?= UrlHelper::url('logout') ?>" class="logout">
                                 <i class="fa-solid fa-right-from-bracket"></i> Se déconnecter
@@ -380,6 +423,7 @@
             const dropdown = document.getElementById('userDropdown');
             dropdown.classList.toggle('show');
         }
+        
         // Fermer le menu si on clique en dehors
         document.addEventListener('click', function(event) {
             const userMenu = document.querySelector('.user-menu');
