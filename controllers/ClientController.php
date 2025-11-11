@@ -4,6 +4,7 @@ class ClientController extends BaseController{
 
     private ReservationModel $reservationModel;
     private UserModel $userModel;
+    private OptionSupplementaireModel $optionsSuppModel;
     private TerrainModel $terrainModel;
     private ?object $currentUser = null;
 
@@ -26,6 +27,7 @@ class ClientController extends BaseController{
         $this->currentUser = $decoded;
         $this->userModel = $this->loadModel('UserModel');
         $this->terrainModel = $this->loadModel('TerrainModel');
+        $this->optionsSuppModel = $this->loadModel('OptionSupplementaireModel');
         $this->reservationModel = $this->loadModel('ReservationModel');
     }
 
@@ -76,6 +78,17 @@ class ClientController extends BaseController{
         ]);
     }
 
+
+    public function searchTerrains(){
+        $taille = $_GET['taille'] ?? 'Grand terrain';
+        $type = $_GET['type'] ?? 'Gazon naturel';
+
+        //echo $_GET['taille'];
+
+        $terrains = $this->terrainModel->getTerrainsByTypeAndTaille($type, $taille);
+        echo json_encode($terrains);
+    }
+
     public function faireReservation(){
 
 
@@ -105,8 +118,7 @@ class ClientController extends BaseController{
                 );
 
                 if (is_int($ret) && $ret > 0) {
-        
-                    header("Location: facture/id/" . $ret);
+                    UrlHelper::url('facture/id/' . $ret);
                     exit;
 
                 } else {
@@ -128,13 +140,21 @@ class ClientController extends BaseController{
         
         $types = $this->terrainModel->getTypes();
         $tailles = $this->terrainModel->getTailles();
+        $options = $this->optionsSuppModel->getAllOptions();
+
+        $all_options = [];
+
+        foreach ($options as $option) {
+            $all_options[] = (array)$option;
+        }
 
        
         $this->renderView('Client/Reservation', [
             'currentUser' => $this->currentUser,
             'user'=> $user,
             'tailles' => $tailles,
-            'types' => $types
+            'types' => $types,
+            'options' => $all_options
         ]);
 
 

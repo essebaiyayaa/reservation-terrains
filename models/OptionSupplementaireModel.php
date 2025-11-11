@@ -135,4 +135,16 @@ class OptionSupplementaireModel extends BaseModel
         $result = $this->db->result();
         return $result && $result->count > 0;
     }
+
+
+    public function getAllOptions(): array
+    {
+        try {
+            $this->db->query("SELECT * FROM OptionSupplementaire ORDER BY nom_option");
+            return $this->db->results();
+        } catch (Exception $e) {
+            error_log("Erreur lors de la récupération des options : " . $e->getMessage());
+            return [];
+        }
+    }
 }

@@ -536,12 +536,12 @@
             <?php endforeach; ?>
           </select>
         </div>
-              <form method="POST">
-                <input type="hidden" name="search" value="yes"/>
-                <button type="submit" class="btn-search" onclick="">
-                <i class="fas fa-search"></i> Rechercher
-                </button>
-              </form>
+             
+                
+            <button type="button" class="btn-search" onclick="searchTerrains()">
+              <i class="fas fa-search"></i> Rechercher
+            </button>
+             
         
       </div>
 
@@ -590,6 +590,7 @@
           </div>
         </div>
 
+        
         <!-- Options supplémentaires -->
         <?php if (!empty($options)): ?>
         <div class="form-group">
@@ -599,6 +600,7 @@
           </h3>
           <div class="options-list">
             <?php foreach ($options as $option): ?>
+              
             <div
               class="option-item"
               onclick="toggleOption(this, <?php echo $option['id_option']; ?>, <?php echo $option['prix']; ?>)"
@@ -680,7 +682,7 @@
   </div>
 </div>
 
-<!-- <script>
+<script>
   // Variables globales pour le polling
   let pollingInterval = null;
   let currentDate = null;
@@ -1025,7 +1027,7 @@
     const taille = document.getElementById("searchTaille").value;
 
     fetch(
-      `search_terrains.php?type=${encodeURIComponent(
+      `search/terrains?type=${encodeURIComponent(
         type
       )}&taille=${encodeURIComponent(taille)}`
     )
@@ -1274,4 +1276,4 @@
     updateCart();
     updateSubmitButton();
   });
-</script> -->
+</script>
