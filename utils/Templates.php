@@ -356,4 +356,86 @@ class Template {
 
         return $template;
     }
+    /**
+     * Template pour les newsletters envoyées aux utilisateurs
+     */
+    public static string $NEWSLETTER_TEMPLATE = "
+        <!DOCTYPE html>
+        <html lang='fr'>
+        <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>Newsletter</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    line-height: 1.6; 
+                    color: #333; 
+                    margin: 0; 
+                    padding: 0; 
+                    background-color: #f9fafb;
+                }
+                .container { 
+                    max-width: 600px; 
+                    margin: 0 auto; 
+                    background: white;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                }
+                .header { 
+                    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); 
+                    color: white; 
+                    padding: 40px 30px; 
+                    text-align: center; 
+                }
+                .header h1 {
+                    margin: 0;
+                    font-size: 28px;
+                }
+                .content { 
+                    padding: 40px 30px; 
+                }
+                .content p {
+                    margin: 15px 0;
+                }
+                .message-content {
+                    background: #f9fafb;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                    border-left: 4px solid #16a34a;
+                }
+                .footer { 
+                    text-align: center; 
+                    margin-top: 30px; 
+                    color: #6b7280; 
+                    font-size: 14px;
+                    padding: 20px;
+                    background: #f9fafb;
+                }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>
+                    <h1>⚽ {SITE_NAME}</h1>
+                </div>
+                <div class='content'>
+                    <p>Bonjour <strong>{name}</strong>,</p>
+                    <div class='message-content'>
+                        {content}
+                    </div>
+                    <p style='color: #6b7280; font-size: 14px; margin-top: 30px;'>
+                        Ce message vous a été envoyé car vous êtes inscrit sur notre plateforme.
+                    </p>
+                </div>
+                <div class='footer'>
+                    <p>&copy; {YEAR} {SITE_NAME} - Tous droits réservés</p>
+                    <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    ";
 }

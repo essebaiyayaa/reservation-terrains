@@ -31,7 +31,11 @@ $routes = [
     // Email verification
     'verify' => ['controller' => 'AuthController', 'method' => 'verify'],
     'verify/submit' => ['controller' => 'AuthController', 'method' => 'verifySubmit'],
-
+// ==================== NEWSLETTER ROUTES ====================
+'newsletter' => ['controller' => 'NewsletterController', 'method' => 'index'],
+'newsletter/create' => ['controller' => 'NewsletterController', 'method' => 'create'],
+'newsletter/show/{id}' => ['controller' => 'NewsletterController', 'method' => 'show'],
+'newsletter/delete/{id}' => ['controller' => 'NewsletterController', 'method' => 'delete'],
     // ==================== ADMIN ROUTES ====================
     // Dashboard principal admin
     'admin' => ['controller' => 'AdminController', 'method' => 'index'],
@@ -114,7 +118,12 @@ $routes = [
     'tournoi/participer' => ['controller' => 'TournoiController', 'method' => 'participer'],
     'tournoi/inscrire' => ['controller' => 'TournoiController', 'method' => 'inscrire'],
     'tournoi/mesparticipations' => ['controller' => 'TournoiController', 'method' => 'mesparticipations'],
-    
+// ==================== NEWSLETTER ROUTES ====================
+// Accessible par Admin et Gérant uniquement
+'newsletter' => ['controller' => 'NewsletterController', 'method' => 'index'],
+'newsletter/create' => ['controller' => 'NewsletterController', 'method' => 'create'],
+'newsletter/show/{id}' => ['controller' => 'NewsletterController', 'method' => 'show'],
+'newsletter/delete/{id}' => ['controller' => 'NewsletterController', 'method' => 'delete'],
     // Gerant Routes - CRUD Operations
     'tournoi/mestournois' => ['controller' => 'TournoiController', 'method' => 'mestournois'],
     'tournoi/create' => ['controller' => 'TournoiController', 'method' => 'create'],
