@@ -82,9 +82,6 @@ class ClientController extends BaseController{
     public function searchTerrains(){
         $taille = $_GET['taille'] ?? 'Grand terrain';
         $type = $_GET['type'] ?? 'Gazon naturel';
-
-        //echo $_GET['taille'];
-
         $terrains = $this->terrainModel->getTerrainsByTypeAndTaille($type, $taille);
         echo json_encode($terrains);
     }
@@ -94,13 +91,6 @@ class ClientController extends BaseController{
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST'){
             
-
-            if($_POST['search'] == 'yes'){
-                $terrains = $this->terrainModel->getTerrainsByTypeAndTaille('Gazon naturel', 'Grand terrain');
-
-                echo var_dump($terrains);
-
-            }else{
                 $date_reservation = $_POST['date_reservation'];
                 $heure_debut = $_POST['heure_debut'];
                 $heure_fin = date('H:i:s', strtotime($heure_debut) + 3600); 
@@ -125,9 +115,9 @@ class ClientController extends BaseController{
         
                     
                 }
-            }
-
         }
+
+        
 
         $user = [
             'prenom' => $this->currentUser->prenom,
