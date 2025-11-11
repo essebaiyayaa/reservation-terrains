@@ -206,7 +206,8 @@ class AuthController extends BaseController {
                         'email' => $user->email,
                         'role' => $user->role,
                         'prenom' => $user->prenom,
-                        'nom' => $user->nom
+                        'nom' => $user->nom,
+                        'telephone' => $user->telephone
                     ];
                     $token = Utils::generateJWT($payload, JWT_SECRET_KEY, $token_duration_seconds);
                     Utils::setCookieSafe('auth_token', $token, $token_duration_seconds);

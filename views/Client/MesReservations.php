@@ -438,7 +438,7 @@
                 <i class="fas fa-calendar-times"></i>
                 <h3>Aucune réservation</h3>
                 <p>Vous n'avez pas encore effectué de réservation.</p>
-                <a href="reservation.php" class="btn btn-primary">
+                <a href="reservation" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Faire une réservation
                 </a>
             </div>

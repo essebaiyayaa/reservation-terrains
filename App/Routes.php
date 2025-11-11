@@ -87,6 +87,7 @@ $routes = [
     
     // Liste des réservations par utilisateur
     'mes-reservations' => ['controller' => 'ClientController', 'method' => 'myReservations'],
+    'reservation' => ['controller' => 'ClientController', 'method' => 'faireReservation'],
 
     // ==================== DASHBOARD ROUTES ====================
     // Dashboards spécifiques par rôle

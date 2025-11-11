@@ -4,6 +4,7 @@ class ClientController extends BaseController{
 
     private ReservationModel $reservationModel;
     private UserModel $userModel;
+    private TerrainModel $terrainModel;
     private ?object $currentUser = null;
 
 
@@ -71,6 +72,29 @@ class ClientController extends BaseController{
         $this->renderView('Client/MesReservations', [
             'reservations' => $reservationsArray,
             'currentUser' => $this->currentUser
+        ]);
+    }
+
+    public function faireReservation(){
+
+        $user = [
+            'prenom' => $this->currentUser->prenom,
+            'email' => $this->currentUser->email,
+            'role' => $this->currentUser->role,
+            'nom' => $this->currentUser->nom,
+            'telephone' => $this->currentUser->telephone
+        ];
+        
+        
+        // $types = $this->terrainModel->getTypes();
+        // $tailles = $this->terrainModel->getTailles();
+
+        // echo var_dump($types);
+        // echo var_dump($tailles);
+
+        $this->renderView('Client/Reservation', [
+            'currentUser' => $this->currentUser,
+            'user'=> $user
         ]);
     }
 
