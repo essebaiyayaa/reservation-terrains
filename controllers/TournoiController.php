@@ -138,7 +138,7 @@ class TournoiController extends BaseController
             // Get gerant's terrains
             require_once __DIR__ . '/../models/TerrainModel.php';
             $terrainModel = new TerrainModel();
-            $mesTerrains = $terrainModel->getTerrainsByGerant($this->currentUser->user_id);
+            $mesTerrains = $terrainModel->getByGerantID($this->currentUser->user_id);
             
             if (empty($mesTerrains)) {
                 $this->setFlashMessage("Vous devez avoir au moins un terrain pour créer un tournoi.", "error");
@@ -289,7 +289,7 @@ class TournoiController extends BaseController
             // Get gerant's terrains
             require_once __DIR__ . '/../models/TerrainModel.php';
             $terrainModel = new TerrainModel();
-            $mesTerrains = $terrainModel->getTerrainsByGerant($this->currentUser->user_id);
+            $mesTerrains = $terrainModel->getByGerantID($this->currentUser->user_id);
             
             $this->renderView('Tournoi/Edit', [
                 'tournoi' => $tournoi,
