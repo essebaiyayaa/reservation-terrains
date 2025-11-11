@@ -269,6 +269,11 @@
                         </a>
                     </li>
                     <li>
+                    <a href="<?= UrlHelper::url('newsletter') ?>" class="...">
+    Newsletter
+</a>
+                </li>
+                    <li>
                         <a href="<?= UrlHelper::url('terrain/create') ?>" 
                            class="<?= strpos($_SERVER['REQUEST_URI'], '/terrain/create') !== false ? 'active' : '' ?>">
                             <i class="fas fa-plus"></i>
@@ -318,7 +323,11 @@
                             Mes réservations
                         </a>
                     </li>
-                    
+                                      <li>
+                    <a href="<?= UrlHelper::url('newsletter') ?>" class="...">
+    Newsletter
+</a>
+                </li>
                     <li>
                         <a href="<?= UrlHelper::url('tournoi/mestournois') ?>" 
                            class="<?= strpos($_SERVER['REQUEST_URI'], '/tournoi/mestournois') !== false || 
