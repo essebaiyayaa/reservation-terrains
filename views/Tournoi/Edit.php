@@ -171,7 +171,7 @@ textarea.form-control {
 
 <div class="container">
     <div class="page-header">
-        <h1><i class="fas fa-edit"></i> Modifier le tournoi</h1>
+        <h1>Modifier le tournoi</h1>
         <p><?= htmlspecialchars($tournoi->nom_tournoi) ?></p>
     </div>
 

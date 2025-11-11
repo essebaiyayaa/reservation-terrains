@@ -5,19 +5,21 @@
     padding: 0 2rem;
 }
 
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #16a34a;
-    text-decoration: none;
-    margin-bottom: 1.5rem;
-    font-weight: 600;
-}
+.back-button {
+        margin-bottom: 2rem;
+    }
 
-.back-link:hover {
-    color: #15803d;
-}
+    .btn-back {
+        background: #6b7280;
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-back:hover {
+        background: #4b5563;
+    }
 
 .tournoi-header {
     background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
@@ -229,9 +231,12 @@
 </style>
 
 <div class="container">
-    <a href="<?= UrlHelper::url('tournoi/mestournois') ?>" class="back-link">
-        <i class="fas fa-arrow-left"></i> Retour à mes tournois
-    </a>
+    <div class="back-button">
+            <a href="<?= UrlHelper::url('tournoi/mestournois') ?>" class="btn btn-back">
+                <i class="fa-solid fa-arrow-left"></i>
+                Retour à mes tournois
+            </a>
+    </div>
 
     <div class="tournoi-header">
         <h1><?= htmlspecialchars($tournoi->nom_tournoi) ?></h1>
