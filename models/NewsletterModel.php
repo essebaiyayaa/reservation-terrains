@@ -6,7 +6,7 @@
  * Gère les newsletters dans la base de données
  * 
  * @package Models
- * @author  Amos & Jihane
+ * @author   Jihane
  * @version 1.0
  */
 class NewsletterModel extends BaseModel
@@ -152,7 +152,7 @@ class NewsletterModel extends BaseModel
         $this->db->query("
             SELECT email, prenom, nom 
             FROM utilisateur 
-            WHERE compte_verifie = 1
+            
             ORDER BY email
         ");
         return $this->db->results();

@@ -175,8 +175,16 @@ class TournoiModel extends BaseModel
      * 
      * @return array List of available tournaments
      */
-    public function getTournoisDisponibles(): array
+       public function getTournoisDisponibles(): array
     {
+        // TEST 1: Fetch ALL tournaments without filters
+        $this->db->query("SELECT * FROM {$this->table}");
+        $allTournois = $this->db->results();
+        error_log("=== DEBUG TOURNOIS ===");
+        error_log("ALL tournaments in database: " . count($allTournois));
+        error_log(print_r($allTournois, true));
+        
+        // TEST 2: With JOIN but without WHERE filters
         $this->db->query("
             SELECT 
                 t.*,
@@ -190,12 +198,15 @@ class TournoiModel extends BaseModel
             FROM {$this->table} t
             LEFT JOIN terrain ter ON t.id_terrain = ter.id_terrain
             LEFT JOIN utilisateur u ON t.id_gerant = u.id_utilisateur
-            WHERE t.statut IN ('En préparation', 'En cours')
-            AND t.date_fin >= CURDATE()
             ORDER BY t.date_debut ASC
         ");
         
-        return $this->db->results();
+        $result = $this->db->results();
+        error_log("Tournaments WITH JOIN (no filters): " . count($result));
+        error_log(print_r($result, true));
+        error_log("======================");
+        
+        return $result;
     }
 
     /**
