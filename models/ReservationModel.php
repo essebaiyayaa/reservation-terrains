@@ -727,6 +727,24 @@ class ReservationModel extends BaseModel
     }
 
 
+    public function cancelReservation(int $id_reservation, int $user_id): bool
+    {
+        $sql = "
+            UPDATE Reservation
+            SET statut = 'Annulée',
+                date_modification = NOW()
+            WHERE id_reservation = :id_reservation
+            AND id_utilisateur = :user_id
+        ";
+
+        $this->db->query($sql);
+        $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+        $this->db->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+
+        return $this->db->execute();
+    }
+
+
     
 
 

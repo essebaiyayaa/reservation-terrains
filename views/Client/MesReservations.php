@@ -545,7 +545,7 @@
                                     Modifier
                                 </a>
                                 
-                                <a href="annuler-reservation.php?id=<?php echo $reservation['id_reservation']; ?>" 
+                                <a href="annuler/id/<?php echo $reservation['id_reservation']; ?>" 
                                    class="btn btn-annuler"
                                    onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ?');">
                                     <i class="fas fa-times-circle"></i>

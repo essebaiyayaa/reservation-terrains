@@ -285,6 +285,58 @@ class ClientController extends BaseController{
         ]);
     }
 
+    public function annulerReservation($id){
+        $errors = [];
+        $reservationObj = $this->reservationModel->getReservationWithTerrain((int)$id, (int)$this->currentUser->user_id);
+
+        if($reservationObj == null){
+            $errors[] = "Réservation introuvable ou vous n'avez pas les droits pour l'annuler.";
+            UrlHelper::redirect('mes-reservations');
+            exit();
+        }
+
+        $reservation = (array)$reservationObj;
+
+        if ($reservation['statut'] === 'Annulée') {
+            $_SESSION['message'] = "Cette réservation est déjà annulée.";
+            $_SESSION['message_type'] = "error";
+            UrlHelper::redirect('mes-reservations');
+            exit();
+        }
+
+        $reservation_datetime = new DateTime($reservation['date_reservation'] . ' ' . $reservation['heure_debut']);
+
+        $now = new DateTime();
+        
+        if ($reservation_datetime < $now) {
+            $_SESSION['message'] = "Impossible d'annuler une réservation passée.";
+            $_SESSION['message_type'] = "error";
+            UrlHelper::redirect('mes-reservations');
+            exit();
+        }
+
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmer_annulation'])) {
+            $success = $this->reservationModel->cancelReservation((int)$id, (int)$this->currentUser->user_id);
+
+            if($success){
+                UrlHelper::redirect('mes-reservations');
+            }else{
+
+            }
+        }
+
+
+        $this->renderView('Client/AnnulerReservation', [
+            'currentUser' => $this->currentUser,
+            'reservation' => $reservation,
+            // 'options' => $all_options,
+            // 'current_options' => $all_current_options,
+            // 'terrains' => $all_terrains,
+            'errors' => $errors
+        ]);
+    }
+
 
 }
 
