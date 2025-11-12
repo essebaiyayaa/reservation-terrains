@@ -50,56 +50,77 @@ class App
      */
     public function __construct()
     {
+        $urlParts = $this->parseUrl();
         
-
-            $urlParts = $this->parseUrl();
-
-       
-            require_once 'Routes.php';
-
+        // Charger les routes
+        require_once 'Routes.php';
+        
+        // Construire l'URL complète
+        $url = implode('/', $urlParts);
+        
+        // Chercher une correspondance exacte d'abord
+        if (isset($routes[$url])) {
+            $this->controller = $routes[$url]['controller'];
+            $this->method = $routes[$url]['method'];
+            $this->params = [];
+        } 
+        // Sinon, chercher une correspondance avec paramètres dynamiques
+        else {
+            $matched = false;
             
-
-            
-            $route = $urlParts[0] ?? '';
-
-            
-
-            if (isset($urlParts[1])) {
-                $route = $urlParts[0] . '/' . $urlParts[1];
+            foreach ($routes as $route => $config) {
+                // Si la route contient {id} ou autre paramètre dynamique
+                if (strpos($route, '{') !== false) {
+                    // Convertir la route en pattern regex
+                    // Exemple: 'gerant/terrain/{id}' devient '#^gerant/terrain/([^/]+)$#'
+                    $pattern = $this->convertRouteToRegex($route);
+                    
+                    // Tester si l'URL correspond au pattern
+                    if (preg_match($pattern, $url, $matches)) {
+                        $this->controller = $config['controller'];
+                        $this->method = $config['method'];
+                        
+                        // Récupérer les paramètres capturés (sans le match complet)
+                        array_shift($matches);
+                        $this->params = $matches;
+                        
+                        $matched = true;
+                        break;
+                    }
+                }
             }
-
             
-
-            if (isset($routes[$route])) {
-                $this->controller = $routes[$route]['controller'];
-              
-                $this->method = $routes[$route]['method'];
-                
-                $this->params = array_slice($urlParts, 2);
-                
-            } else {
-            
+            // Si aucune route ne correspond
+            if (!$matched) {
                 http_response_code(404);
                 echo "404 - Route Not Found!";
                 exit;
             }
-
-            
-            
-            
-            require_once  __DIR__ . '/../controllers/' . $this->controller . '.php';;
-
-            
-            $this->controller = new $this->controller;
-
+        }
         
-            
-            
-            call_user_func_array([$this->controller, $this->method], $this->params);
-
+        // Charger le controller
+        $controllerFile = __DIR__ . '/../controllers/' . $this->controller . '.php';
         
+        if (!file_exists($controllerFile)) {
+            http_response_code(404);
+            echo "404 - Controller Not Found: " . $this->controller;
+            exit;
+        }
         
-       
+        require_once $controllerFile;
+        
+        // Instancier le controller
+        $this->controller = new $this->controller;
+        
+        // Vérifier que la méthode existe
+        if (!method_exists($this->controller, $this->method)) {
+            http_response_code(404);
+            echo "404 - Method Not Found: " . $this->method;
+            exit;
+        }
+        
+        // Appeler la méthode avec les paramètres
+        call_user_func_array([$this->controller, $this->method], $this->params);
     }
 
     /**
@@ -117,22 +138,27 @@ class App
             return explode('/', filter_var(rtrim($_GET['url'], '/'), FILTER_SANITIZE_URL));
         }
 
-        
         return [''];
     }
 
-
-    // private function handleError(int $code): void
-    // {
-    //     http_response_code($code);
-    //     $errorPage = __DIR__ . "/../views/errors/{$code}.php";
-    //     if (file_exists($errorPage)) {
-    //         require $errorPage;
-    //     } else {
-    //         echo "$code - Error";
-    //     }
-    //     exit;
-    // }
+    /**
+     * Convertit une route avec paramètres dynamiques en pattern regex
+     * 
+     * Exemple:
+     * - Input: 'gerant/terrain/{id}'
+     * - Output: '#^gerant/terrain/([^/]+)$#'
+     * 
+     * @param string $route La route à convertir
+     * @return string Le pattern regex
+     */
+    private function convertRouteToRegex(string $route): string
+    {
+        // Remplacer {param} par ([^/]+) pour capturer n'importe quelle valeur
+        $pattern = preg_replace('/\{[a-zA-Z_]+\}/', '([^/]+)', $route);
+        
+        // Ajouter les délimiteurs et ancres regex
+        return '#^' . $pattern . '$#';
+    }
 }
 
 ?>
