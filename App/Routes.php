@@ -84,9 +84,9 @@ $routes = [
     // === Tournois gérant ===
     'tournoi/mestournois' => ['controller' => 'TournoiController', 'method' => 'mestournois'],
     'tournoi/create' => ['controller' => 'TournoiController', 'method' => 'create'],
-    'tournoi/show' => ['controller' => 'TournoiController', 'method' => 'show'],
-    'tournoi/edit' => ['controller' => 'TournoiController', 'method' => 'edit'],
-    'tournoi/delete' => ['controller' => 'TournoiController', 'method' => 'delete'],
+    'tournoi/show/{id}' => ['controller' => 'TournoiController', 'method' => 'show'],
+    'tournoi/edit/{id}' => ['controller' => 'TournoiController', 'method' => 'edit'],
+    'tournoi/delete/{id}' => ['controller' => 'TournoiController', 'method' => 'delete'],
     
     // === Dashboard gérant ===
     'dashboard/gerant' => ['controller' => 'DashboardController', 'method' => 'gerant'],
