@@ -7,7 +7,8 @@
  * Accessible par les admins et gérants
  * 
  * @package Controllers
- * @author  Amos & Jihane
+ * @author  Jihane Chouhe
+ *  
  * @version 1.0
  */
 class NewsletterController extends BaseController
@@ -267,7 +268,7 @@ class NewsletterController extends BaseController
         <body>
             <div class='container'>
                 <div class='header'>
-                    <h1>⚽ " . SITE_NAME . "</h1>
+                    <h1> " . SITE_NAME . "</h1>
                 </div>
                 <div class='content'>
                     <p>Bonjour <strong>{$name}</strong>,</p>
