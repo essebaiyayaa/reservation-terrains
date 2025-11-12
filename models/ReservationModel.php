@@ -650,6 +650,15 @@ class ReservationModel extends BaseModel
         int $id_terrain,
         string $commentaires
     ): bool {
+
+        echo $id_reservation;
+        echo $user_id;
+        echo $date_reservation;
+        echo $heure_debut;
+        echo $heure_fin;
+        echo $id_terrain;
+        echo $commentaires;
+        
         $sql = "
             UPDATE Reservation
             SET date_reservation = :date_reservation,
@@ -683,28 +692,41 @@ class ReservationModel extends BaseModel
         string $heure_fin,
         int $id_reservation
     ): bool {
+        
+
         $sql = "
             SELECT COUNT(*) AS count 
             FROM Reservation 
             WHERE id_terrain = :id_terrain
-              AND date_reservation = :date_reservation
-              AND statut IN ('Confirmée', 'Modifiée')
-              AND id_reservation != :id_reservation
-              AND (
-                    (heure_debut < :heure_fin AND heure_fin > :heure_debut) OR
-                    (heure_debut >= :heure_debut AND heure_fin <= :heure_fin)
-              )
+            AND date_reservation = :date_reservation
+            AND statut IN ('Confirmée', 'Modifiée')
+            AND id_reservation != :id_reservation
+            AND (
+                    (heure_debut < :heure_fin1 AND heure_fin > :heure_debut1) OR
+                    (heure_debut >= :heure_debut2 AND heure_fin <= :heure_fin2)
+            )
         ";
 
-        $this->db->query($sql);
-        $this->db->bindValue(':id_terrain', $id_terrain, PDO::PARAM_INT);
-        $this->db->bindValue(':date_reservation', $date_reservation);
-        $this->db->bindValue(':heure_debut', $heure_debut);
-        $this->db->bindValue(':heure_fin', $heure_fin);
-        $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+        try {
+            $this->db->query($sql);
+            $this->db->bindValue(':id_terrain', $id_terrain, PDO::PARAM_INT);
+            $this->db->bindValue(':date_reservation', $date_reservation);
+            $this->db->bindValue(':heure_debut1', $heure_debut);
+            $this->db->bindValue(':heure_fin1', $heure_fin);
+            $this->db->bindValue(':heure_debut2', $heure_debut);
+            $this->db->bindValue(':heure_fin2', $heure_fin);
+            $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+                    
+        
+           $result = $this->db->result();
+           
+          return $result->count > 0;
+        } catch (Exception $e) {
+            echo "DB error: " . htmlspecialchars($e->getMessage());
+            return true;
+        }
 
-        $result = $this->db->result();
-        return $result->count > 0;
+        
     }
 
 

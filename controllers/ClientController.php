@@ -207,6 +207,8 @@ class ClientController extends BaseController{
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_reservation'])) {
 
+            
+
             $date_reservation = $_POST['date_reservation'] ?? '';
             $heure_debut = $_POST['heure_debut'] ?? '';
             $heure_fin = $_POST['heure_fin'] ?? '';
@@ -215,7 +217,7 @@ class ClientController extends BaseController{
             $selected_options = $_POST['options'] ?? [];
 
 
-
+            
             $has_conflict = $this->reservationModel->hasTimeConflict(
                 (int)$id_terrain,
                 $date_reservation,
@@ -224,6 +226,7 @@ class ClientController extends BaseController{
                 (int)$id
             );
 
+            
 
             if($has_conflict){
                 $errors[] = "Le terrain n'est pas disponible pour ce créneau horaire.";
