@@ -458,7 +458,7 @@
                 </div>
 
                 <div class="actions">
-                    <a href="mes-reservations.php" class="btn btn-secondary">
+                    <a href="/reservation-terrains/public/mes-reservations" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i>
                         Annuler
                     </a>
