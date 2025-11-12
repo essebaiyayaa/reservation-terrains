@@ -257,7 +257,7 @@
     <div class="content-grid">
         <!-- Informations du tournoi -->
         <div class="card">
-            <h2><i class="fas fa-info-circle"></i> Informations</h2>
+            <h2><i class="fas fa-info-circle" style="color: #16a34a;"></i>Informations</h2>
             
             <?php if ($tournoi->description): ?>
                 <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px;">
@@ -319,7 +319,7 @@
 
         <!-- Statistiques -->
         <div class="card">
-            <h2><i class="fas fa-chart-bar"></i> Statistiques</h2>
+            <h2><i class="fas fa-chart-bar" style="color: #16a34a;"></i> Statistiques</h2>
             
             <div class="stats-grid">
                 <div class="stat-box">
@@ -369,7 +369,7 @@
         <!-- Liste des équipes inscrites -->
         <div class="card equipes-section">
             <h2>
-                <i class="fas fa-users"></i> 
+                <i class="fas fa-users" style="color: #16a34a;"></i> 
                 Équipes inscrites (<?= count($equipes) ?>)
             </h2>
 
