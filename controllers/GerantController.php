@@ -7,7 +7,7 @@
  * 
  * @package Controllers
  * @author  System
- * @version 1.0
+ * @version 1.1
  */
 class GerantController extends BaseController {
 
@@ -15,6 +15,8 @@ class GerantController extends BaseController {
     private TerrainModel $terrainModel;
     private OptionSupplementaireModel $optionModel;
     private ?object $currentUser = null;
+    private UserModel $userModel;
+    private PromotionModel $promotionModel;
 
     public function __construct()
     {
@@ -36,11 +38,10 @@ class GerantController extends BaseController {
         $this->reservationModel = $this->loadModel('ReservationModel');
         $this->terrainModel = $this->loadModel('TerrainModel');
         $this->optionModel = $this->loadModel('OptionSupplementaireModel');
+        $this->userModel = $this->loadModel('UserModel');
+        $this->promotionModel = $this->loadModel('PromotionModel');
     }
 
-    /**
-     * Dashboard principal du gérant
-     */
     public function index(): void
     {
         $stats = [
@@ -56,7 +57,6 @@ class GerantController extends BaseController {
             'role' => $this->currentUser->role
         ];
 
-        // Récupérer les terrains du gérant
         $terrains = $this->terrainModel->getByGerantId($this->currentUser->user_id);
 
         $this->renderView('Gerant/Dashboard', [
@@ -67,9 +67,6 @@ class GerantController extends BaseController {
         ], 'Tableau de Bord Gérant');
     }
 
-    /**
-     * Liste tous les terrains du gérant
-     */
     public function mesTerrains(): void
     {
         $terrains = $this->terrainModel->getByGerantId($this->currentUser->user_id);
@@ -80,19 +77,14 @@ class GerantController extends BaseController {
         ], 'Mes Terrains');
     }
 
-    /**
-     * Afficher les détails d'un terrain
-     */
     public function show(string $id): void
     {
         $terrain = $this->terrainModel->getById($id);
-        
         if (!$terrain) {
             $this->renderView('Errors/404', [], '404 - Terrain non trouvé');
             return;
         }
 
-        // Vérifier que le terrain appartient au gérant
         $terrainOwnerId = is_object($terrain) ? $terrain->id_utilisateur : $terrain['id_utilisateur'];
         if ($terrainOwnerId != $this->currentUser->user_id) {
             http_response_code(403);
@@ -100,7 +92,6 @@ class GerantController extends BaseController {
             return;
         }
 
-        // Récupérer les options
         $options = $this->optionModel->getByTerrainId($id);
 
         $this->renderView('Gerant/TerrainDetails', [
@@ -110,28 +101,20 @@ class GerantController extends BaseController {
         ], 'Détails du Terrain');
     }
 
-    /**
-     * Non utilisé pour gérant (créé par admin)
-     */
     public function create(): void
     {
         http_response_code(403);
         $this->renderView('Errors/403', [], 'Accès interdit');
     }
 
-    /**
-     * Modifier un terrain du gérant
-     */
     public function edit(string $id): void
     {
         $terrain = $this->terrainModel->getById($id);
-        
         if (!$terrain) {
             $this->renderView('Errors/404', [], '404 - Terrain non trouvé');
             return;
         }
 
-        // Vérifier propriété
         $terrainOwnerId = is_object($terrain) ? $terrain->id_utilisateur : $terrain['id_utilisateur'];
         if ($terrainOwnerId != $this->currentUser->user_id) {
             http_response_code(403);
@@ -168,7 +151,45 @@ class GerantController extends BaseController {
             return;
         }
 
+        $ancienPrix = $terrain->prix_heure;
+        $nouveauPrix = $updateData['prix_heure'];
+
         if ($this->terrainModel->update($id, $updateData)) {
+
+            // Si baisse de prix, créer promo et envoyer mail
+            if ($nouveauPrix < $ancienPrix) {
+
+                $reduction = ($ancienPrix > 0) ? round((($ancienPrix - $nouveauPrix) / $ancienPrix) * 100, 2) : 0;
+$promoData = [
+    'id_terrain' => (int)$id,
+    'description' => "Baisse du prix de $ancienPrix à $nouveauPrix DH (-$reduction%)",
+    'pourcentage_remise' => floatval($reduction), // forcer float
+    'date_debut' => date('Y-m-d'),
+    'date_fin' => date('Y-m-d', strtotime('+7 days')),
+    'actif' => 1
+];
+
+$result = $this->promotionModel->add($promoData);
+if (!$result) {
+    echo "Erreur d’insertion promotion !";
+    var_dump($promoData);
+    exit;
+}
+                $clients = $this->userModel->getAllClients();
+
+                foreach ($clients as $client) {
+    $subject = "🏷️ Nouvelle promotion sur le terrain {$terrain->nom_terrain}";
+    $body = "Bonjour {$client->prenom},\n\n"
+        . "Le terrain '{$terrain->nom_terrain}' vient de baisser son prix :\n"
+        . "Ancien prix : {$ancienPrix} DH\n"
+        . "Nouveau prix : {$nouveauPrix} DH\n"
+        . "Profitez de cette promotion valable jusqu'au " . date('d/m/Y', strtotime('+7 days')) . " !\n\n"
+        . "L’équipe FootBooking ⚽";
+
+    Utils::sendEmail($client->email, $subject, nl2br($body));
+}
+            }
+
             $_SESSION['success'] = "Terrain modifié avec succès !";
             UrlHelper::redirect("gerant/terrain/$id");
         } else {
@@ -181,28 +202,20 @@ class GerantController extends BaseController {
         }
     }
 
-    /**
-     * Gérant ne peut pas supprimer (admin only)
-     */
     public function delete(string $id): void
     {
         http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Accès interdit']);
     }
 
-    /**
-     * Gérer les options d'un terrain
-     */
     public function gererOptions(string $terrainId): void
     {
         $terrain = $this->terrainModel->getById($terrainId);
-        
         if (!$terrain) {
             $this->renderView('Errors/404', [], '404 - Terrain non trouvé');
             return;
         }
 
-        // Vérifier propriété
         $terrainOwnerId = is_object($terrain) ? $terrain->id_utilisateur : $terrain['id_utilisateur'];
         if ($terrainOwnerId != $this->currentUser->user_id) {
             http_response_code(403);
@@ -212,7 +225,6 @@ class GerantController extends BaseController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $options = $this->optionModel->getByTerrainId($terrainId);
-            
             $this->renderView('Gerant/GererOptions', [
                 'terrain' => $terrain,
                 'options' => $options ?: [],
@@ -221,7 +233,6 @@ class GerantController extends BaseController {
             return;
         }
 
-        // Traiter POST - Ajouter une option
         $nom_option = trim($_POST['nom_option'] ?? '');
         $prix = floatval($_POST['prix'] ?? 0);
 
@@ -231,7 +242,6 @@ class GerantController extends BaseController {
 
         if (!empty($errors)) {
             $options = $this->optionModel->getByTerrainId($terrainId);
-            
             $this->renderView('Gerant/GererOptions', [
                 'terrain' => $terrain,
                 'options' => $options ?: [],
@@ -253,7 +263,6 @@ class GerantController extends BaseController {
         } else {
             $errors[] = "Erreur lors de l'ajout de l'option";
             $options = $this->optionModel->getByTerrainId($terrainId);
-            
             $this->renderView('Gerant/GererOptions', [
                 'terrain' => $terrain,
                 'options' => $options ?: [],
@@ -263,9 +272,6 @@ class GerantController extends BaseController {
         }
     }
 
-    /**
-     * Supprimer une option
-     */
     public function supprimerOption(string $optionId): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -275,17 +281,14 @@ class GerantController extends BaseController {
         }
 
         $option = $this->optionModel->getById($optionId);
-        
         if (!$option) {
             echo json_encode(['success' => false, 'message' => 'Option non trouvée']);
             return;
         }
 
-        // Vérifier que le gérant possède le terrain
         $terrain = $this->terrainModel->getById(
             is_object($option) ? $option->id_terrain : $option['id_terrain']
         );
-        
         if (!$terrain) {
             echo json_encode(['success' => false, 'message' => 'Terrain non trouvé']);
             return;
@@ -305,5 +308,4 @@ class GerantController extends BaseController {
         }
     }
 }
-
 ?>

@@ -194,4 +194,13 @@ class UserModel extends BaseModel
         
         return $this->db->execute();
     }
+/**
+ * Get all clients
+ * 
+ * @return array List of users with role 'client'
+ */
+public function getAllClients(): array
+{
+    return $this->getAllByRole('client');
+}
 }
