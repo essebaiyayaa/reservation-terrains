@@ -386,6 +386,28 @@ class TerrainModel extends BaseModel
     }
 
 
+    public function getBookedSlots(int $terrain_id, string $date): array
+    {
+        $sql = "
+            SELECT heure_debut 
+            FROM Reservation 
+            WHERE id_terrain = :terrain_id 
+            AND date_reservation = :date_reservation 
+            AND statut != 'Annulée'
+        ";
+
+        $this->db->query($sql);
+        $this->db->bindValue(':terrain_id', $terrain_id, PDO::PARAM_INT);
+        $this->db->bindValue(':date_reservation', $date);
+        $results = $this->db->results(); 
+
+       
+        $booked_slots = array_map(fn($r) => $r->heure_debut, $results);
+
+        return $booked_slots;
+    }
+
+
 
 
 }

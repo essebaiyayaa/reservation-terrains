@@ -593,5 +593,143 @@ class ReservationModel extends BaseModel
     }
 
 
+
+
+
+    public function getReservationWithTerrain(int $id_reservation, int $user_id): ?object
+    {
+        $sql = "
+            SELECT r.*, t.nom_terrain, t.ville, t.taille, t.type, t.prix_heure, t.id_terrain
+            FROM Reservation r
+            JOIN Terrain t ON r.id_terrain = t.id_terrain
+            WHERE r.id_reservation = :id_reservation AND r.id_utilisateur = :user_id
+        ";
+
+        $this->db->query($sql);
+        $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+        $this->db->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+        $result = $this->db->result();
+
+        return $result ?: null;
+    }
+
+
+
+    public function getReservationOptionsSupp(int $id_reservation): array
+    {
+        $sql = "SELECT id_option FROM Reservation_Option WHERE id_reservation = :id_reservation";
+        $this->db->query($sql);
+        $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+        $rows = $this->db->results();
+
+        return array_map(fn($r) => $r->id_option, $rows);
+    }
+
+
+     public function getAllTerrains(): array
+    {
+        $this->db->query("SELECT * FROM Terrain ORDER BY ville, nom_terrain");
+        return array_map(fn($r) => $r, $this->db->results());
+    }
+
+    public function getAllSuppOptions(): array
+    {
+        $this->db->query("SELECT * FROM OptionSupplementaire ORDER BY nom_option");
+        return $this->db->results();
+    }
+
+
+
+
+    public function updateReservation(
+        int $id_reservation,
+        int $user_id,
+        string $date_reservation,
+        string $heure_debut,
+        string $heure_fin,
+        int $id_terrain,
+        string $commentaires
+    ): bool {
+        $sql = "
+            UPDATE Reservation
+            SET date_reservation = :date_reservation,
+                heure_debut = :heure_debut,
+                heure_fin = :heure_fin,
+                id_terrain = :id_terrain,
+                commentaires = :commentaires,
+                statut = CASE WHEN statut = 'Confirmée' THEN 'Modifiée' ELSE statut END,
+                date_modification = NOW()
+            WHERE id_reservation = :id_reservation AND id_utilisateur = :user_id
+        ";
+
+        $this->db->query($sql);
+        $this->db->bindValue(':date_reservation', $date_reservation);
+        $this->db->bindValue(':heure_debut', $heure_debut);
+        $this->db->bindValue(':heure_fin', $heure_fin);
+        $this->db->bindValue(':id_terrain', $id_terrain,  PDO::PARAM_INT);
+        $this->db->bindValue(':commentaires', $commentaires);
+        $this->db->bindValue(':id_reservation', $id_reservation,  PDO::PARAM_INT);
+        $this->db->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+
+        return $this->db->execute();
+    }
+
+
+
+    public function hasTimeConflict(
+        int $id_terrain,
+        string $date_reservation,
+        string $heure_debut,
+        string $heure_fin,
+        int $id_reservation
+    ): bool {
+        $sql = "
+            SELECT COUNT(*) AS count 
+            FROM Reservation 
+            WHERE id_terrain = :id_terrain
+              AND date_reservation = :date_reservation
+              AND statut IN ('Confirmée', 'Modifiée')
+              AND id_reservation != :id_reservation
+              AND (
+                    (heure_debut < :heure_fin AND heure_fin > :heure_debut) OR
+                    (heure_debut >= :heure_debut AND heure_fin <= :heure_fin)
+              )
+        ";
+
+        $this->db->query($sql);
+        $this->db->bindValue(':id_terrain', $id_terrain, PDO::PARAM_INT);
+        $this->db->bindValue(':date_reservation', $date_reservation);
+        $this->db->bindValue(':heure_debut', $heure_debut);
+        $this->db->bindValue(':heure_fin', $heure_fin);
+        $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+
+        $result = $this->db->result();
+        return $result->count > 0;
+    }
+
+
+
+
+    public function resetReservationOptions(int $id_reservation, array $selected_options): void
+    {
+        $this->db->query("DELETE FROM Reservation_Option WHERE id_reservation = :id_reservation");
+        $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+        $this->db->execute();
+
+        if (!empty($selected_options)) {
+            foreach ($selected_options as $id_option) {
+                $this->db->query("INSERT INTO Reservation_Option (id_reservation, id_option) VALUES (:id_reservation, :id_option)");
+                $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+                $this->db->bindValue(':id_option', $id_option, PDO::PARAM_INT);
+                $this->db->execute();
+            }
+        }
+    }
+
+
+    
+
+
+
     
 }

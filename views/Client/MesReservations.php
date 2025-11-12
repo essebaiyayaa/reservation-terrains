@@ -538,7 +538,7 @@
 
                             <?php if (!$is_cancelled && !$is_past): ?>
                             <div class="reservation-actions">
-                                <a href="modifier-reservation.php?id=<?php echo $reservation['id_reservation']; ?>" 
+                                <a href="modifier/id/<?php echo $reservation['id_reservation']; ?>" 
                                    class="btn btn-modifier" 
                                    <?php echo !$can_modify ? 'style="pointer-events: none; opacity: 0.5;"' : ''; ?>>
                                     <i class="fas fa-edit"></i>

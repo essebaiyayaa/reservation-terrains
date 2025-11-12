@@ -948,7 +948,7 @@
       const selectedSlotValue = selectedTimeSlot.value;
 
       fetch(
-        `get_available_slots.php?terrain_id=${terrainId}&date=${dateSelected}`
+        `available/slots?terrain_id=${terrainId}&date=${dateSelected}`
       )
         .then((response) => response.json())
         .then((data) => {

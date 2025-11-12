@@ -86,6 +86,23 @@ class ClientController extends BaseController{
         echo json_encode($terrains);
     }
 
+    public function getAvailableSlots(){
+        $terrain_id = $_GET['terrain_id'] ?? 22;
+        $date = $_GET['date'] ?? '11/22/2025';
+
+        $slots = $this->terrainModel->getBookedSlots($terrain_id, $date);
+
+        
+
+        echo json_encode([
+            'success' => true,
+            'booked_slots' => $slots,
+            'date' => $date,
+            'terrain_id' => $terrain_id,
+            'timestamp' => time()
+        ]);
+    }
+
     public function faireReservation(){
 
 
@@ -180,6 +197,91 @@ class ClientController extends BaseController{
             'total_general' => $totals['total_general'],
             'total_options' => $totals['total_options'],
             'options' => $all_options
+        ]);
+    }
+
+
+    public function modifierReservation($id){
+        $errors = [];
+
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_reservation'])) {
+
+            $date_reservation = $_POST['date_reservation'] ?? '';
+            $heure_debut = $_POST['heure_debut'] ?? '';
+            $heure_fin = $_POST['heure_fin'] ?? '';
+            $id_terrain = (int)($_POST['id_terrain'] ?? 0);
+            $commentaires = trim($_POST['commentaires'] ?? '');
+            $selected_options = $_POST['options'] ?? [];
+
+
+
+            $has_conflict = $this->reservationModel->hasTimeConflict(
+                (int)$id_terrain,
+                $date_reservation,
+                $heure_debut,
+                $heure_fin,
+                (int)$id
+            );
+
+
+            if($has_conflict){
+                $errors[] = "Le terrain n'est pas disponible pour ce créneau horaire.";
+            }else{
+                $updated = $this->reservationModel->updateReservation(
+                    (int)$id,
+                    (int)$this->currentUser->user_id,
+                    $date_reservation,
+                    $heure_debut,
+                    $heure_fin,
+                    (int)$id_terrain,
+                    $commentaires
+                );
+
+                if($updated){
+                    $this->reservationModel->resetReservationOptions((int)$id, $selected_options);
+                }else{
+                    $errors[] = "Erreur lors de la modification : ";
+                }
+            }
+            
+        }
+        
+
+        $reservationObj = $this->reservationModel->getReservationWithTerrain((int)$id, (int)$this->currentUser->user_id);
+
+        $reservation = (array)$reservationObj;
+        $current_options = $this->reservationModel->getReservationOptionsSupp((int)$id);
+        $terrains = (array)$this->reservationModel->getAllTerrains();
+        $options = $this->reservationModel->getAllSuppOptions();
+
+        $all_options = [];
+        $all_current_options = [];
+        $all_terrains = [];
+
+        foreach ($options as $option) {
+            $all_options[] = (array)$option;
+        }
+
+        foreach ($current_options as $option) {
+            $all_current_options[] = (array)$option;
+        }
+
+        foreach ($terrains as $t) {
+            $all_terrains[] = (array)$t;
+        }
+
+        
+
+        // echo var_dump($all_terrains[0]['id_terrain']);
+
+        $this->renderView('Client/ModifierReservation', [
+            'currentUser' => $this->currentUser,
+            'reservation' => $reservation,
+            'options' => $all_options,
+            'current_options' => $all_current_options,
+            'terrains' => $all_terrains,
+            'errors' => $errors
         ]);
     }
 
