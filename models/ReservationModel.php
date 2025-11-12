@@ -459,46 +459,45 @@ class ReservationModel extends BaseModel
 
 
     public function getTodaysReservations($id): int {
-        try {
-            $this->db->query("
-                SELECT COUNT(*) AS reservations_aujourdhui
-                FROM Reservation r
-                JOIN Terrain t ON r.id_terrain = t.id_terrain
-                WHERE t.id_utilisateur = :id
-                AND r.date_reservation = CURDATE()
-            ");
+    try {
+        $this->db->query("
+            SELECT COUNT(*) AS total
+            FROM Reservation r
+            JOIN Terrain t ON r.id_terrain = t.id_terrain
+            WHERE t.id_utilisateur = :id
+            AND r.date_reservation = CURDATE()
+        ");
 
-            $this->db->bindValue(':id', $id, PDO::PARAM_INT);
-            $result = $this->db->result();
-            
-            return $result ? intval($result->total) : 0;
-        } catch (Exception $e) {
-            error_log("Error getting todays reservations count: " . $e->getMessage());
-            return 0;
-        }
+        $this->db->bindValue(':id', $id, PDO::PARAM_INT);
+        $result = $this->db->result();
+        
+        return $result ? intval($result->total) : 0;
+    } catch (Exception $e) {
+        error_log("Error getting todays reservations count: " . $e->getMessage());
+        return 0;
     }
+}
 
-    public function getChiffreAffairesMoisGerant($id): int {
-        try {
-            $this->db->query(
-            "
-                SELECT COALESCE(SUM(t.prix_heure), 0) as ca_mois 
-                FROM Reservation r 
-                JOIN Terrain t ON r.id_terrain = t.id_terrain 
-                WHERE t.id_utilisateur = :id
-                AND MONTH(r.date_reservation) = MONTH(CURDATE()) 
-                AND YEAR(r.date_reservation) = YEAR(CURDATE())
-            
-            ");
-            $this->db->bindValue(':id', $id, PDO::PARAM_INT);
-            $result = $this->db->result();
-            
-            return $result ? intval($result->total) : 0;
-        } catch (Exception $e) {
-            error_log("Error getting todays reservations count: " . $e->getMessage());
-            return 0;
-        }
+    public function getChiffreAffairesMoisGerant($id): float {
+    try {
+        $this->db->query("
+            SELECT COALESCE(SUM(t.prix_heure), 0) as total
+            FROM Reservation r 
+            JOIN Terrain t ON r.id_terrain = t.id_terrain 
+            WHERE t.id_utilisateur = :id
+            AND MONTH(r.date_reservation) = MONTH(CURDATE()) 
+            AND YEAR(r.date_reservation) = YEAR(CURDATE())
+        ");
+        
+        $this->db->bindValue(':id', $id, PDO::PARAM_INT);
+        $result = $this->db->result();
+        
+        return $result ? floatval($result->total) : 0.0;
+    } catch (Exception $e) {
+        error_log("Error getting monthly revenue: " . $e->getMessage());
+        return 0.0;
     }
+}
 
 
 

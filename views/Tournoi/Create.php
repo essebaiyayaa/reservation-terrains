@@ -145,7 +145,7 @@ textarea.form-control {
 
 <div class="container">
     <div class="page-header">
-        <h1><i class="fas fa-plus-circle"></i> Créer un nouveau tournoi</h1>
+        <h1><i class="fas fa-plus-circle" style="color: #16a34a;"></i> Créer un nouveau tournoi</h1>
         <p>Organisez un tournoi sur l'un de vos terrains</p>
     </div>
 

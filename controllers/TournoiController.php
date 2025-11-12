@@ -14,6 +14,7 @@ require_once __DIR__ . '/../models/TournoiModel.php';
  * - Admin: View all tournaments
  * 
  * @package Controllers
+ * @author  Fatima Elmessaoudi , Essebaiy Aya
  * @extends BaseController
  */
 class TournoiController extends BaseController

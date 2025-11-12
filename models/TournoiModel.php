@@ -6,6 +6,7 @@
  * Handles all database operations for Tournoi table
  * 
  * @package Models
+ * @author  Fatima Elmessaoudi , Essebaiy Aya
  * @extends BaseModel
  */
 class TournoiModel extends BaseModel
