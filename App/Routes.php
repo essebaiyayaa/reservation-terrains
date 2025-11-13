@@ -80,7 +80,9 @@ $routes = [
     
     // === Gestion des réservations ===
     'gerant/reservations' => ['controller' => 'GerantController', 'method' => 'reservations'],
-    
+    // === Gestion des réservations ===
+
+'gerant/update-reservation-status' => ['controller' => 'GerantController', 'method' => 'updateReservationStatus'], // ✅ NOUVELLE ROUTE
     // === Tournois gérant ===
     'tournoi/mestournois' => ['controller' => 'TournoiController', 'method' => 'mestournois'],
     'tournoi/create' => ['controller' => 'TournoiController', 'method' => 'create'],
