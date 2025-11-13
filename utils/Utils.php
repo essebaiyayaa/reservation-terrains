@@ -440,210 +440,348 @@
         ################################################################
 
 
-        public static function generateInvoicePDF($reservation, $options, $total_options, $total_general) {
-            // nouvelel instance tcpdf
-            $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-            
-            // juste un prototype, mn baed nstyliw facture
+public static function generateInvoicePDF($reservation, $options, $total_options, $total_general) {
 
-            $pdf->SetCreator('FootBooking');
-            $pdf->SetAuthor('FootBooking');
-            $pdf->SetTitle('Facture Réservation ' . $reservation['id_reservation']);
-            $pdf->SetSubject('Facture');
-            
-            
-            $pdf->setPrintHeader(false);
-            $pdf->setPrintFooter(false);
-            
-            // Ajouter une page
-            $pdf->AddPage();
-            
-            // contenu
-            $html = self::generateInvoiceHTML($reservation, $options, $total_options, $total_general, true);
-            
-            // html contenu
-            $pdf->writeHTML($html, true, false, true, false, '');
-            
-            // telecharger
-            $pdf->Output('facture_reservation_' . $reservation['id_reservation'] . '.pdf', 'D');
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    error_reporting(0);
+    ini_set('display_errors', '0');
+    
+    // Charger TCPDF
+    require_once(__DIR__ . '/../vendor/tecnickcom/tcpdf/tcpdf.php');
+    
+    // Créer une nouvelle instance TCPDF
+    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    
+    // Informations du document
+    $pdf->SetCreator('FootBooking');
+    $pdf->SetAuthor('FootBooking');
+    $pdf->SetTitle('Facture de réservation #' . $reservation['id_reservation']);
+    $pdf->SetSubject('Facture');
+    
+    // Supprimer header/footer par défaut
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    
+    // Définir les marges
+    $pdf->SetMargins(15, 15, 15);
+    $pdf->SetAutoPageBreak(TRUE, 15);
+    
+    // Ajouter une page
+    $pdf->AddPage();
+    
+  
+    $id_reservation = $reservation['id_reservation'] ?? 'N/A';
+    $date_reservation = isset($reservation['date_reservation']) 
+        ? date('d/m/Y', strtotime($reservation['date_reservation'])) 
+        : date('d/m/Y');
+    $heure_debut = isset($reservation['heure_debut']) 
+        ? date('H:i', strtotime($reservation['heure_debut'])) 
+        : '00:00';
+    $heure_fin = isset($reservation['heure_fin']) 
+        ? date('H:i', strtotime($reservation['heure_fin'])) 
+        : '00:00';
+    $statut = $reservation['statut'] ?? 'En attente';
+    $nom_terrain = $reservation['nom_terrain'] ?? 'Non spécifié';
+    $adresse = $reservation['adresse'] ?? '';
+    $ville = $reservation['ville'] ?? '';
+    $prix_heure = $reservation['prix_heure'] ?? 0;
+    $prenom = $reservation['prenom'] ?? 'N/A';
+    $nom = $reservation['nom'] ?? 'N/A';
+    $email = $reservation['email'] ?? 'N/A';
+    $telephone = $reservation['telephone'] ?? 'Non renseigné';
+    $commentaires = $reservation['commentaires'] ?? '';
+  
+    $html = '
+    <style>
+        body { font-family: helvetica, sans-serif; color: #333; line-height: 1.6; }
+        
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            padding-bottom: 20px;
+            border-bottom: 3px solid #16a34a; 
         }
-
-
-        public static function generateInvoiceHTML($reservation, $options, $total_options, $total_general, $forPDF = false) {
-            $date_reservation = date('d/m/Y', strtotime($reservation['date_reservation']));
-            $heure_debut = date('H:i', strtotime($reservation['heure_debut']));
-            $heure_fin = date('H:i', strtotime($reservation['heure_fin']));
-            
-            if ($forPDF) {
-                $styles = "
-                    <style>
-                        body { font-family: helvetica; font-size: 12px; }
-                        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #16a34a; padding-bottom: 10px; }
-                        .invoice-title { color: #16a34a; font-size: 24px; font-weight: bold; }
-                        .section { margin-bottom: 15px; }
-                        .section-title { background-color: #f0f0f0; padding: 8px; font-weight: bold; border-left: 4px solid #16a34a; }
-                        .info-grid { display: table; width: 100%; }
-                        .info-row { display: table-row; }
-                        .info-label { display: table-cell; font-weight: bold; width: 30%; padding: 4px; }
-                        .info-value { display: table-cell; padding: 4px; }
-                        .table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-                        .table th { background-color: #16a34a; color: white; padding: 8px; text-align: left; }
-                        .table td { padding: 8px; border-bottom: 1px solid #ddd; }
-                        .total-section { background-color: #f9f9f9; padding: 10px; margin-top: 20px; border: 1px solid #ddd; }
-                        .total-row { display: flex; justify-content: space-between; margin: 5px 0; }
-                        .grand-total { font-size: 16px; font-weight: bold; color: #16a34a; border-top: 2px solid #16a34a; padding-top: 5px; }
-                        .footer { text-align: center; margin-top: 30px; font-size: 10px; color: #666; }
-                    </style>
-                ";
-            } else {
-                $styles = "";
-            }
-            
-            $html = "
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset='UTF-8'>
-                    <title>Facture Réservation {$reservation['id_reservation']}</title>
-                    $styles
-                </head>
-                <body>
-                    <div class='header'>
-                        <h1 class='invoice-title'>FOOTBOOKING</h1>
-                        <h2>FACTURE</h2>
-                        <p>Réservation #{$reservation['id_reservation']}</p>
-                    </div>
-                    
-                    <div class='section'>
-                        <div class='section-title'>Informations de la réservation</div>
-                        <div class='info-grid'>
-                            <div class='info-row'>
-                                <div class='info-label'>Numéro de réservation:</div>
-                                <div class='info-value'>#{$reservation['id_reservation']}</div>
-                            </div>
-                            <div class='info-row'>
-                                <div class='info-label'>Date de réservation:</div>
-                                <div class='info-value'>$date_reservation</div>
-                            </div>
-                            <div class='info-row'>
-                                <div class='info-label'>Créneau horaire:</div>
-                                <div class='info-value'>$heure_debut - $heure_fin</div>
-                            </div>
-                            <div class='info-row'>
-                                <div class='info-label'>Statut:</div>
-                                <div class='info-value'>{$reservation['statut']}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class='section'>
-                        <div class='section-title'>Informations du terrain</div>
-                        <div class='info-grid'>
-                            <div class='info-row'>
-                                <div class='info-label'>Terrain:</div>
-                                <div class='info-value'>{$reservation['nom_terrain']}</div>
-                            </div>
-                            <div class='info-row'>
-                                <div class='info-label'>Adresse:</div>
-                                <div class='info-value'>{$reservation['adresse']}, {$reservation['ville']}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class='section'>
-                        <div class='section-title'>Informations client</div>
-                        <div class='info-grid'>
-                            <div class='info-row'>
-                                <div class='info-label'>Nom complet:</div>
-                                <div class='info-value'>{$reservation['prenom']} {$reservation['nom']}</div>
-                            </div>
-                            <div class='info-row'>
-                                <div class='info-label'>Email:</div>
-                                <div class='info-value'>{$reservation['email']}</div>
-                            </div>
-                            <div class='info-row'>
-                                <div class='info-label'>Téléphone:</div>
-                                <div class='info-value'>{$reservation['telephone']}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class='section'>
-                        <div class='section-title'>Détails de la facturation</div>
-                        <table class='table'>
-                            <thead>
-                                <tr>
-                                    <th>Description</th>
-                                    <th>Prix unitaire</th>
-                                    <th>Quantité</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Location du terrain {$reservation['nom_terrain']}</td>
-                                    <td>" . number_format($reservation['prix_heure'], 2) . " DH</td>
-                                    <td>1 heure</td>
-                                    <td>" . number_format($reservation['prix_heure'], 2) . " DH</td>
-                                </tr>";
-            
-            // Ajouter les options
-            foreach ($options as $option) {
-                $html .= "
-                                <tr>
-                                    <td>{$option['nom_option']}</td>
-                                    <td>" . number_format($option['prix'], 2) . " DH</td>
-                                    <td>1</td>
-                                    <td>" . number_format($option['prix'], 2) . " DH</td>
-                                </tr>";
-            }
-            
-            $html .= "
-                            </tbody>
-                        </table>
-                        
-                        <div class='total-section'>
-                            <div class='total-row'>
-                                <span>Sous-total terrain:</span>
-                                <span>" . number_format($reservation['prix_heure'], 2) . " DH</span>
-                            </div>";
-            
-            if ($total_options > 0) {
-                $html .= "
-                            <div class='total-row'>
-                                <span>Options supplémentaires:</span>
-                                <span>" . number_format($total_options, 2) . " DH</span>
-                            </div>";
-            }
-            
-            $html .= "
-                            <div class='total-row grand-total'>
-                                <span>TOTAL:</span>
-                                <span>" . number_format($total_general, 2) . " DH</span>
-                            </div>
-                        </div>
-                    </div>";
-            
-            if (!$forPDF) {
-                $html .= "
-                    <div class='section'>
-                        <div class='section-title'>Commentaires</div>
-                        <p>" . nl2br(htmlspecialchars($reservation['commentaires'] ?? 'Aucun commentaire')) . "</p>
-                    </div>";
-            }
-            
-            $html .= "
-                    <div class='footer'>
-                        <p>Merci pour votre réservation !</p>
-                        <p>FootBooking - Votre partenaire de football préféré</p>
-                        <p>Facture générée le " . date('d/m/Y à H:i') . "</p>
-                    </div>
-                </body>
-                </html>
-            ";
-            
-            return $html;
+        
+        .invoice-title { 
+            color: #16a34a; 
+            font-size: 28px; 
+            font-weight: bold; 
+            margin-bottom: 5px;
         }
+        
+        .invoice-subtitle { 
+            color: #6b7280; 
+            font-size: 20px; 
+            margin-bottom: 10px;
+        }
+        
+        .invoice-number {
+            background-color: #16a34a;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            display: inline-block;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .section { 
+            margin-bottom: 25px; 
+            page-break-inside: avoid;
+        }
+        
+        .section-title { 
+            background-color: #f0fdf4; 
+            color: #065f46;
+            padding: 10px; 
+            font-weight: bold; 
+            font-size: 14px;
+            border-left: 4px solid #16a34a;
+            margin-bottom: 12px;
+        }
+        
+        .info-row { 
+            padding: 6px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .info-label { 
+            color: #374151;
+            font-weight: bold; 
+            display: inline-block;
+            width: 180px;
+        }
+        
+        .info-value { 
+            color: #6b7280;
+            display: inline-block;
+        }
+        
+        table.invoice-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 15px 0;
+        }
+        
+        table.invoice-table th { 
+            background-color: #16a34a; 
+            color: white; 
+            padding: 12px 8px; 
+            text-align: left;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        table.invoice-table td { 
+            padding: 10px 8px; 
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 10px;
+        }
+        
+        table.invoice-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .total-section { 
+            background-color: #f9fafb; 
+            padding: 15px; 
+            margin-top: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .total-row { 
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .total-row:last-child {
+            border-bottom: none;
+            border-top: 2px solid #16a34a;
+            padding-top: 12px;
+            margin-top: 8px;
+        }
+        
+        .total-label { 
+            font-weight: bold;
+            color: #374151;
+            display: inline-block;
+            width: 70%;
+        }
+        
+        .total-value { 
+            font-weight: bold;
+            color: #374151;
+            float: right;
+        }
+        
+        .grand-total { 
+            font-size: 16px; 
+            color: #16a34a;
+        }
+        
+        .comment-section {
+            background-color: #f9fafb;
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 3px solid #16a34a;
+            margin-top: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 9px;
+        }
+    </style>
+    
+    <div class="header">
+        <div class="invoice-title">FOOTBOOKING</div>
+        <div class="invoice-subtitle">FACTURE</div>
+        <div class="invoice-number">Réservation #' . htmlspecialchars($id_reservation) . '</div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Informations de la réservation</div>
+        <div class="info-row">
+            <span class="info-label">Numéro de réservation</span>
+            <span class="info-value">#' . htmlspecialchars($id_reservation) . '</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Date de réservation</span>
+            <span class="info-value">' . htmlspecialchars($date_reservation) . '</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Créneau horaire</span>
+            <span class="info-value">' . htmlspecialchars($heure_debut) . ' - ' . htmlspecialchars($heure_fin) . '</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Statut</span>
+            <span class="info-value">' . htmlspecialchars($statut) . '</span>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Informations du terrain</div>
+        <div class="info-row">
+            <span class="info-label">Terrain</span>
+            <span class="info-value">' . htmlspecialchars($nom_terrain) . '</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Adresse</span>
+            <span class="info-value">' . htmlspecialchars($adresse . ', ' . $ville) . '</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Prix horaire</span>
+            <span class="info-value">' . number_format($prix_heure, 2) . ' DH</span>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Informations client</div>
+        <div class="info-row">
+            <span class="info-label">Nom complet</span>
+            <span class="info-value">' . htmlspecialchars($prenom . ' ' . $nom) . '</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Email</span>
+            <span class="info-value">' . htmlspecialchars($email) . '</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Téléphone</span>
+            <span class="info-value">' . htmlspecialchars($telephone) . '</span>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Détails de la facturation</div>
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th width="50%">Description</th>
+                    <th width="18%">Prix unitaire</th>
+                    <th width="12%">Quantité</th>
+                    <th width="20%">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Location du terrain ' . htmlspecialchars($nom_terrain) . '</td>
+                    <td>' . number_format($prix_heure, 2) . ' DH</td>
+                    <td>1 heure</td>
+                    <td>' . number_format($prix_heure, 2) . ' DH</td>
+                </tr>';
+    
+
+    foreach ($options as $option) {
+        $option_nom = $option['nom_option'] ?? 'Option';
+        $option_prix = $option['prix'] ?? 0;
+        $html .= '
+                <tr>
+                    <td>' . htmlspecialchars($option_nom) . '</td>
+                    <td>' . number_format($option_prix, 2) . ' DH</td>
+                    <td>1</td>
+                    <td>' . number_format($option_prix, 2) . ' DH</td>
+                </tr>';
+    }
+    
+    $html .= '
+            </tbody>
+        </table>
+        
+        <div class="total-section">
+            <div class="total-row">
+                <span class="total-label">Sous-total terrain</span>
+                <span class="total-value">' . number_format($prix_heure, 2) . ' DH</span>
+            </div>';
+    
+    if ($total_options > 0) {
+        $html .= '
+            <div class="total-row">
+                <span class="total-label">Options supplémentaires</span>
+                <span class="total-value">' . number_format($total_options, 2) . ' DH</span>
+            </div>';
+    }
+    
+    $html .= '
+            <div class="total-row grand-total">
+                <span class="total-label">TOTAL</span>
+                <span class="total-value">' . number_format($total_general, 2) . ' DH</span>
+            </div>
+        </div>
+    </div>';
+
+    if (!empty($commentaires)) {
+        $html .= '
+        <div class="section">
+            <div class="section-title">Commentaires</div>
+            <div class="comment-section">' . nl2br(htmlspecialchars($commentaires)) . '</div>
+        </div>';
+    }
+    
+    $html .= '
+    <div class="footer">
+        <p><strong>Merci pour votre réservation !</strong></p>
+        <p>FootBooking - Votre plateforme de réservation de terrains de football</p>
+        <p>Facture générée le ' . date('d/m/Y à H:i') . '</p>
+    </div>';
+
+    $pdf->writeHTML($html, true, false, true, false, '');
+ 
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+
+    $filename = 'facture_reservation_' . $id_reservation . '.pdf';
+    $pdf->Output($filename, 'D'); // 'D' = force download
+    
+    exit;
+}
 
 
 
