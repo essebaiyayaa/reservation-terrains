@@ -306,8 +306,8 @@
                     <!-- ========== MENU GERANT ========== -->
                     <li><a href="<?= UrlHelper::url('/') ?>">Accueil</a></li>
                     <li>
-                        <a href="<?= UrlHelper::url('dashboard/gerant') ?>" 
-                           class="<?= strpos($_SERVER['REQUEST_URI'], '/dashboard/gerant') !== false ? 'active' : '' ?>">
+                        <a href="<?= UrlHelper::url('gerant/dashboard') ?>" 
+                           class="<?= strpos($_SERVER['REQUEST_URI'], 'gerant/dashboard') !== false ? 'active' : '' ?>">
                             Mon Dashboard
                         </a>
                     </li>
