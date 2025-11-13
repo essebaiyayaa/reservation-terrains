@@ -7,5 +7,4 @@
     require_once 'tokenconfig.php';
     require_once 'siteconfig.php';
 require_once __DIR__ . '/../utils/UrlHelper.php';
-
 ?>

@@ -50,9 +50,9 @@ $routes = [
     
     // === Gestion des réservations client ===
     'mes-reservations' => ['controller' => 'ClientController', 'method' => 'myReservations'],
-    'modifier/id' => ['controller' => 'ClientController', 'method' => 'modifierReservation'],
-    'annuler/id' => ['controller' => 'ClientController', 'method' => 'annulerReservation'],
-    'facture/id' => ['controller' => 'ClientController', 'method' => 'facturer'],
+    'modifier/id/{id}' => ['controller' => 'ClientController', 'method' => 'modifierReservation'],
+    'annuler/id/{id}' => ['controller' => 'ClientController', 'method' => 'annulerReservation'],
+    'facture/id/{id}' => ['controller' => 'ClientController', 'method' => 'facturer'], // ✅ CORRECTION ICI
     
     // === Tournois client ===
     'tournoi/participer' => ['controller' => 'TournoiController', 'method' => 'participer'],
