@@ -490,7 +490,7 @@
   </form>
 
   <!-- Nouveau bouton pour accéder à Mes réservations -->
-  <a href="mes-reservations" class="btn btn-secondary">
+  <a href="<?php UrlHelper::redirect('mes-reservations'); ?>" class="btn btn-secondary">
     <i class="fas fa-list"></i>
     Mes réservations
   </a>
