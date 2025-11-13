@@ -1,4 +1,11 @@
- <style>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Réservations - FootBooking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
         * {
             margin: 0;
             padding: 0;
@@ -72,6 +79,11 @@
             background: white;
             color: #16a34a;
             border: 2px solid #16a34a;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
         }
 
         .btn-outline:hover {
@@ -127,6 +139,108 @@
 
         .message i {
             font-size: 1.5rem;
+        }
+
+        /* Filtres */
+        .filters-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .filters-section h2 {
+            font-size: 1.5rem;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #16a34a;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .btn-filter {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-filter:hover {
+            background: #15803d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+        }
+
+        .btn-reset {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #4b5563;
+        }
+
+        .results-count {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-right: auto;
         }
 
         /* Réservations Grid */
@@ -187,9 +301,9 @@
             color: #991b1b;
         }
 
-        .status-badge.modifiee {
-            background: #dbeafe;
-            color: #1e40af;
+        .status-badge.en-attente {
+            background: #fef3c7;
+            color: #92400e;
         }
 
         .reservation-body {
@@ -264,24 +378,19 @@
             flex-wrap: wrap;
         }
 
-        .btn {
+        .btn-modifier {
+            background: #fed7aa;
+            color: #9a3412;
+            border: 1px solid #fdba74;
             padding: 0.5rem 1rem;
             border-radius: 6px;
             text-decoration: none;
             font-weight: 500;
             transition: all 0.3s;
-            border: none;
-            cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
             font-size: 0.875rem;
-        }
-
-        .btn-modifier {
-            background: #fed7aa;
-            color: #9a3412;
-            border: 1px solid #fdba74;
         }
 
         .btn-modifier:hover:not(:disabled) {
@@ -294,6 +403,15 @@
             background: #fecaca;
             color: #991b1b;
             border: 1px solid #fca5a5;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.875rem;
         }
 
         .btn-annuler:hover:not(:disabled) {
@@ -346,6 +464,11 @@
             color: white;
             padding: 0.8rem 2rem;
             font-size: 1rem;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .btn-primary:hover {
@@ -377,6 +500,20 @@
                 font-size: 2rem;
             }
 
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .results-count {
+                margin-right: 0;
+                text-align: center;
+            }
+
             .reservation-header {
                 flex-direction: column;
                 align-items: flex-start;
@@ -390,16 +527,12 @@
                 flex-direction: row;
                 justify-content: flex-start;
             }
-
-            .btn {
-                flex: 0 0 auto;
-            }
         }
     </style>
+</head>
+<body>
 
-
-
- <!-- Page Header -->
+    <!-- Page Header -->
     <section class="page-header">
         <h1><i class="fas fa-calendar-check"></i> Mes Réservations</h1>
         <p>Gérez toutes vos réservations de terrains de football</p>
@@ -407,46 +540,131 @@
 
     <!-- Main Content -->
     <div class="container">
-        <?php if ($message): ?>
-            <div class="message <?php echo $message_type; ?>">
-                <i class="fas fa-<?php echo $message_type === 'success' ? 'check-circle' : 'exclamation-circle'; ?>"></i>
-                <span><?php echo htmlspecialchars($message); ?></span>
+        <?php if (isset($_SESSION['message']) && !empty($_SESSION['message'])): ?>
+            <div class="message <?php echo $_SESSION['message_type'] ?? 'success'; ?>">
+                <i class="fas fa-<?php echo ($_SESSION['message_type'] ?? 'success') === 'success' ? 'check-circle' : 'exclamation-circle'; ?>"></i>
+                <span><?php echo htmlspecialchars($_SESSION['message']); ?></span>
             </div>
+            <?php 
+                unset($_SESSION['message']);
+                unset($_SESSION['message_type']);
+            ?>
         <?php endif; ?>
 
+        <!-- Filtres de recherche -->
+        <div class="filters-section">
+            <h2><i class="fas fa-filter"></i> Filtres de recherche</h2>
+            <form method="GET" action="">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="statut"><i class="fas fa-flag"></i> Statut</label>
+                        <select name="statut" id="statut">
+                            <option value="">Tous les statuts</option>
+                            <option value="Confirmée" <?= ($_GET['statut'] ?? '') === 'Confirmée' ? 'selected' : '' ?>>Confirmée</option>
+                            <option value="En attente" <?= ($_GET['statut'] ?? '') === 'En attente' ? 'selected' : '' ?>>En attente</option>
+                            <option value="Annulée" <?= ($_GET['statut'] ?? '') === 'Annulée' ? 'selected' : '' ?>>Annulée</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="terrain"><i class="fas fa-map-marker-alt"></i> Terrain</label>
+                        <select name="terrain" id="terrain">
+                            <option value="">Tous les terrains</option>
+                            <?php
+                            $uniqueTerrains = [];
+                            foreach ($reservations as $reservation) {
+                                $terrainKey = $reservation['nom_terrain'] . '|' . $reservation['ville'];
+                                if (!in_array($terrainKey, $uniqueTerrains)) {
+                                    $uniqueTerrains[] = $terrainKey;
+                                    $selected = ($_GET['terrain'] ?? '') === $reservation['nom_terrain'] ? 'selected' : '';
+                                    echo "<option value=\"" . htmlspecialchars($reservation['nom_terrain']) . "\" $selected>" . 
+                                         htmlspecialchars($reservation['nom_terrain'] . ' - ' . $reservation['ville']) . "</option>";
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="date_debut"><i class="fas fa-calendar"></i> Date de début</label>
+                        <input type="date" name="date_debut" id="date_debut" value="<?= $_GET['date_debut'] ?? '' ?>">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="date_fin"><i class="fas fa-calendar"></i> Date de fin</label>
+                        <input type="date" name="date_fin" id="date_fin" value="<?= $_GET['date_fin'] ?? '' ?>">
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <div class="results-count">
+                        <?php
+                        $filteredReservations = $reservations;
+                        
+                        // Appliquer les filtres
+                        if (isset($_GET['statut']) && $_GET['statut'] !== '') {
+                            $filteredReservations = array_filter($filteredReservations, fn($r) => $r['statut'] === $_GET['statut']);
+                        }
+                        
+                        if (isset($_GET['terrain']) && $_GET['terrain'] !== '') {
+                            $filteredReservations = array_filter($filteredReservations, fn($r) => $r['nom_terrain'] === $_GET['terrain']);
+                        }
+                        
+                        if (isset($_GET['date_debut']) && $_GET['date_debut'] !== '') {
+                            $filteredReservations = array_filter($filteredReservations, fn($r) => $r['date_reservation'] >= $_GET['date_debut']);
+                        }
+                        
+                        if (isset($_GET['date_fin']) && $_GET['date_fin'] !== '') {
+                            $filteredReservations = array_filter($filteredReservations, fn($r) => $r['date_reservation'] <= $_GET['date_fin']);
+                        }
+                        
+                        $count = count($filteredReservations);
+                        echo $count . " réservation" . ($count > 1 ? 's' : '') . " trouvée" . ($count > 1 ? 's' : '');
+                        ?>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-filter">
+                        <i class="fas fa-search"></i> Appliquer les filtres
+                    </button>
+                    
+                    <a href="mes-reservations" class="btn btn-reset">
+                        <i class="fas fa-times"></i> Réinitialiser
+                    </a>
+                </div>
+            </form>
+        </div>
+
         <?php
-        
-            function canModifyReservation($date_reservation, $heure_debut) {
-                $reservation_datetime = new DateTime($date_reservation . ' ' . $heure_debut);
-                $now = new DateTime();
-                $diff = $now->diff($reservation_datetime);
-                $hours_until = ($diff->days * 24) + $diff->h;
-                
-                // Si la date est passée, retourner false
-                if ($reservation_datetime < $now) {
-                    return false;
-                }
-                
-                // Vérifier s'il reste au moins 48 heures
-                return $hours_until >= 48;
+        function canModifyReservation($date_reservation, $heure_debut) {
+            $reservation_datetime = new DateTime($date_reservation . ' ' . $heure_debut);
+            $now = new DateTime();
+            $diff = $now->diff($reservation_datetime);
+            $hours_until = ($diff->days * 24) + $diff->h;
+            
+            // Si la date est passée, retourner false
+            if ($reservation_datetime < $now) {
+                return false;
             }
-        
+            
+            // Vérifier s'il reste au moins 48 heures
+            return $hours_until >= 48;
+        }
         ?>
 
-        <?php if (empty($reservations)): ?>
+        <?php if (empty($filteredReservations)): ?>
             <div class="no-reservations">
                 <i class="fas fa-calendar-times"></i>
-                <h3>Aucune réservation</h3>
-                <p>Vous n'avez pas encore effectué de réservation.</p>
-                <a href="reservation" class="btn btn-primary">
+                <h3>Aucune réservation trouvée</h3>
+                <p>Aucune réservation ne correspond à vos critères de recherche.</p>
+                <a href="reservation" class="btn-primary">
                     <i class="fas fa-plus"></i> Faire une réservation
                 </a>
             </div>
         <?php else: ?>
             <div class="reservations-grid">
-                <?php foreach ($reservations as $reservation): ?>
+                <?php foreach ($filteredReservations as $reservation): ?>
                     <?php 
-                   $can_modify = canModifyReservation($reservation['date_reservation'], $reservation['heure_debut']);
+                    $can_modify = canModifyReservation($reservation['date_reservation'], $reservation['heure_debut']);
                     $is_cancelled = $reservation['statut'] === 'Annulée';
                     $is_past = strtotime($reservation['date_reservation'] . ' ' . $reservation['heure_debut']) < time();
                     $can_interact = !$is_cancelled && !$is_past;
@@ -455,7 +673,7 @@
                         <div class="reservation-header">
                             <div class="reservation-title">
                                 <h3><?php echo htmlspecialchars($reservation['nom_terrain']); ?></h3>
-                                <span class="status-badge <?php echo strtolower(str_replace('é', 'e', $reservation['statut'])); ?>">
+                                <span class="status-badge <?php echo strtolower(str_replace(['é', ' '], ['e', '-'], $reservation['statut'])); ?>">
                                     <?php echo htmlspecialchars($reservation['statut']); ?>
                                 </span>
                             </div>
@@ -539,14 +757,14 @@
                             <?php if (!$is_cancelled && !$is_past): ?>
                             <div class="reservation-actions">
                                 <a href="modifier/id/<?php echo $reservation['id_reservation']; ?>" 
-                                   class="btn btn-modifier" 
+                                   class="btn-modifier" 
                                    <?php echo !$can_modify ? 'style="pointer-events: none; opacity: 0.5;"' : ''; ?>>
                                     <i class="fas fa-edit"></i>
                                     Modifier
                                 </a>
                                 
                                 <a href="annuler/id/<?php echo $reservation['id_reservation']; ?>" 
-                                   class="btn btn-annuler"
+                                   class="btn-annuler"
                                    onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ?');">
                                     <i class="fas fa-times-circle"></i>
                                     Annuler
@@ -566,3 +784,5 @@
             </div>
         <?php endif; ?>
     </div>
+</body>
+</html>
