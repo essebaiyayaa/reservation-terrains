@@ -332,23 +332,48 @@ public function facturer($id){
 }
 
 
-    public function modifierReservation($id){
-        $errors = [];
+public function modifierReservation($id){
+    // ✅ DÉBUT DU BUFFER POUR ÉVITER LES PROBLÈMES DE HEADERS
+    if (ob_get_level() === 0) {
+        ob_start();
+    }
+    
+    $errors = [];
 
+    // ✅ LOGS RÉDUITS POUR ÉVITER DE REMPLIR LE BUFFER
+    error_log("=== MODIFIER RESERVATION APPELÉE ===");
+    error_log("ID Réservation: " . $id);
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_reservation'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_reservation'])) {
+        
+        error_log("✅ Formulaire soumis");
+        
+        $date_reservation = $_POST['date_reservation'] ?? '';
+        $heure_debut = $_POST['heure_debut'] ?? '';
+        $heure_fin = $_POST['heure_fin'] ?? '';
+        $id_terrain = (int)($_POST['id_terrain'] ?? 0);
+        $commentaires = trim($_POST['commentaires'] ?? '');
+        $selected_options = $_POST['options'] ?? [];
 
+        // Validation des données
+        if (empty($date_reservation) || empty($heure_debut) || empty($heure_fin) || $id_terrain == 0) {
+            $errors[] = "Tous les champs obligatoires doivent être remplis.";
+        }
+        
+        // Vérifier que la date est au moins 48h dans le futur
+        if (empty($errors)) {
+            $reservation_datetime = new DateTime($date_reservation . ' ' . $heure_debut);
+            $now = new DateTime();
+            $diff = $now->diff($reservation_datetime);
+            $hours_diff = ($diff->days * 24) + $diff->h;
             
-
-            $date_reservation = $_POST['date_reservation'] ?? '';
-            $heure_debut = $_POST['heure_debut'] ?? '';
-            $heure_fin = $_POST['heure_fin'] ?? '';
-            $id_terrain = (int)($_POST['id_terrain'] ?? 0);
-            $commentaires = trim($_POST['commentaires'] ?? '');
-            $selected_options = $_POST['options'] ?? [];
-
-
-            
+            if ($hours_diff < 48) {
+                $errors[] = "La modification doit être effectuée au moins 48 heures avant le début du match.";
+            }
+        }
+        
+        // Vérifier la disponibilité du créneau
+        if (empty($errors)) {
             $has_conflict = $this->reservationModel->hasTimeConflict(
                 (int)$id_terrain,
                 $date_reservation,
@@ -357,11 +382,10 @@ public function facturer($id){
                 (int)$id
             );
 
-            
-
             if($has_conflict){
                 $errors[] = "Le terrain n'est pas disponible pour ce créneau horaire.";
-            }else{
+            } else {
+                // Tout est bon, on met à jour
                 $updated = $this->reservationModel->updateReservation(
                     (int)$id,
                     (int)$this->currentUser->user_id,
@@ -373,51 +397,107 @@ public function facturer($id){
                 );
 
                 if($updated){
+                    // Mettre à jour les options
                     $this->reservationModel->resetReservationOptions((int)$id, $selected_options);
-                }else{
-                    $errors[] = "Erreur lors de la modification : ";
+                    
+                    // ✅ NETTOYAGE DU BUFFER AVANT REDIRECTION
+                    if (ob_get_level()) {
+                        ob_end_clean();
+                    }
+                    
+                    $_SESSION['message'] = "Votre réservation a été modifiée avec succès!";
+                    $_SESSION['message_type'] = "success";
+                    UrlHelper::redirect('mes-reservations');
+                    exit();
+                } else {
+                    $errors[] = "Erreur lors de la modification de la réservation.";
                 }
             }
-            
         }
-        
-
-        $reservationObj = $this->reservationModel->getReservationWithTerrain((int)$id, (int)$this->currentUser->user_id);
-
-        $reservation = (array)$reservationObj;
-        $current_options = $this->reservationModel->getReservationOptionsSupp((int)$id);
-        $terrains = (array)$this->reservationModel->getAllTerrains();
-        $options = $this->reservationModel->getAllSuppOptions();
-
-        $all_options = [];
-        $all_current_options = [];
-        $all_terrains = [];
-
-        foreach ($options as $option) {
-            $all_options[] = (array)$option;
-        }
-
-        foreach ($current_options as $option) {
-            $all_current_options[] = (array)$option;
-        }
-
-        foreach ($terrains as $t) {
-            $all_terrains[] = (array)$t;
-        }
-
-        
-
-        // echo var_dump($all_terrains[0]['id_terrain']);
-
-        $this->renderView('Client/ModifierReservation', [
-            'currentUser' => $this->currentUser,
-            'reservation' => $reservation,
-            'options' => $all_options,
-            'current_options' => $all_current_options,
-            'terrains' => $all_terrains,
-            'errors' => $errors
-        ]);
     }
+    
+    // Récupérer les données pour afficher le formulaire
+    $reservationObj = $this->reservationModel->getReservationWithTerrain((int)$id, (int)$this->currentUser->user_id);
+    
+    if($reservationObj == null){
+        // ✅ NETTOYAGE AVANT REDIRECTION
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        $_SESSION['message'] = "Réservation introuvable ou vous n'avez pas les droits pour la modifier.";
+        $_SESSION['message_type'] = "error";
+        UrlHelper::redirect('mes-reservations');
+        exit();
+    }
+
+    $reservation = (array)$reservationObj;
+    
+    // Vérifier que la réservation peut être modifiée
+    if ($reservation['statut'] === 'Annulée') {
+        // ✅ NETTOYAGE AVANT REDIRECTION
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        $_SESSION['message'] = "Impossible de modifier une réservation annulée.";
+        $_SESSION['message_type'] = "error";
+        UrlHelper::redirect('mes-reservations');
+        exit();
+    }
+    
+    // Vérifier le délai de 48h (seulement pour l'affichage initial)
+    $reservation_datetime = new DateTime($reservation['date_reservation'] . ' ' . $reservation['heure_debut']);
+    $now = new DateTime();
+    $diff = $now->diff($reservation_datetime);
+    $hours_diff = ($diff->days * 24) + $diff->h;
+    
+    if ($hours_diff < 48) {
+        // ✅ NETTOYAGE AVANT REDIRECTION
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        $_SESSION['message'] = "La modification doit être effectuée au moins 48 heures avant le début du match.";
+        $_SESSION['message_type'] = "error";
+        UrlHelper::redirect('mes-reservations');
+        exit();
+    }
+    
+    $current_options = $this->reservationModel->getReservationOptionsSupp((int)$id);
+    $terrains = (array)$this->reservationModel->getAllTerrains();
+    $options = $this->reservationModel->getAllSuppOptions();
+
+    $all_options = [];
+    $all_current_options = [];
+    $all_terrains = [];
+
+    foreach ($options as $option) {
+        $all_options[] = (array)$option;
+    }
+
+    foreach ($current_options as $option) {
+        $all_current_options[] = (array)$option;
+    }
+
+    foreach ($terrains as $t) {
+        $all_terrains[] = (array)$t;
+    }
+
+    // ✅ AFFICHAGE NORMAL - FLUSH DU BUFFER
+    if (ob_get_level() > 0) {
+        ob_end_flush();
+    }
+
+    $this->renderView('Client/ModifierReservation', [
+        'currentUser' => $this->currentUser,
+        'reservation' => $reservation,
+        'options' => $all_options,
+        'current_options' => $all_current_options,
+        'terrains' => $all_terrains,
+        'errors' => $errors
+    ]);
+}
 
     public function annulerReservation($id){
         $errors = [];

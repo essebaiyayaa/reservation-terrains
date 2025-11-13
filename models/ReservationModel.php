@@ -110,25 +110,28 @@ class ReservationModel extends BaseModel
      * @param string $terrainId Terrain ID
      * @return array List of reservations
      */
-    public function getByTerrainId(string $terrainId): array
-    {
-        $this->db->query("
-            SELECT 
-                r.*,
-                u.prenom as client_prenom,
-                u.nom as client_nom,
-                u.email as client_email,
-                u.telephone as client_telephone
-            FROM Reservation r
-            JOIN Utilisateur u ON r.id_utilisateur = u.id_utilisateur
-            WHERE r.id_terrain = :terrain_id
-            ORDER BY r.date_reservation DESC, r.heure_debut DESC
-        ");
-        
-        $this->db->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
-        
-        return $this->db->results();
-    }
+public function getByTerrainId(string $terrainId): array
+{
+    $this->db->query("
+        SELECT 
+            r.*,
+            t.nom_terrain,
+            t.ville,
+            u.prenom as client_prenom,
+            u.nom as client_nom,
+            u.email as client_email,
+            u.telephone as client_telephone
+        FROM Reservation r
+        JOIN Utilisateur u ON r.id_utilisateur = u.id_utilisateur
+        JOIN Terrain t ON r.id_terrain = t.id_terrain
+        WHERE r.id_terrain = :terrain_id
+        ORDER BY r.date_reservation DESC, r.heure_debut DESC
+    ");
+    
+    $this->db->bindValue(':terrain_id', $terrainId, PDO::PARAM_INT);
+    
+    return $this->db->results();
+}
 
     /**
      * Get reservations by user ID
@@ -144,8 +147,8 @@ class ReservationModel extends BaseModel
                 t.nom_terrain,
                 t.ville,
                 t.adresse,
-                t.type_terrain,
-                t.prix_par_heure
+                t.type,
+                t.prix_heure
             FROM Reservation r
             JOIN Terrain t ON r.id_terrain = t.id_terrain
             WHERE r.id_utilisateur = :user_id
@@ -190,7 +193,7 @@ class ReservationModel extends BaseModel
                 t.nom_terrain,
                 t.ville,
                 t.adresse,
-                t.type_terrain,
+                t.type,
                 u.prenom as client_prenom,
                 u.nom as client_nom,
                 u.email as client_email,
@@ -684,49 +687,86 @@ class ReservationModel extends BaseModel
 
 
 
-    public function hasTimeConflict(
-        int $id_terrain,
-        string $date_reservation,
-        string $heure_debut,
-        string $heure_fin,
-        int $id_reservation
-    ): bool {
-        
-
-        $sql = "
-            SELECT COUNT(*) AS count 
-            FROM Reservation 
-            WHERE id_terrain = :id_terrain
-            AND date_reservation = :date_reservation
-            AND statut IN ('Confirmée', 'Modifiée')
-            AND id_reservation != :id_reservation
-            AND (
-                    (heure_debut < :heure_fin1 AND heure_fin > :heure_debut1) OR
-                    (heure_debut >= :heure_debut2 AND heure_fin <= :heure_fin2)
-            )
-        ";
-
-        try {
-            $this->db->query($sql);
-            $this->db->bindValue(':id_terrain', $id_terrain, PDO::PARAM_INT);
-            $this->db->bindValue(':date_reservation', $date_reservation);
-            $this->db->bindValue(':heure_debut1', $heure_debut);
-            $this->db->bindValue(':heure_fin1', $heure_fin);
-            $this->db->bindValue(':heure_debut2', $heure_debut);
-            $this->db->bindValue(':heure_fin2', $heure_fin);
-            $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
-                    
-        
-           $result = $this->db->result();
-           
-          return $result->count > 0;
-        } catch (Exception $e) {
-            echo "DB error: " . htmlspecialchars($e->getMessage());
-            return true;
-        }
-
-        
+ public function hasTimeConflict(
+    int $id_terrain,
+    string $date_reservation,
+    string $heure_debut,
+    string $heure_fin,
+    int $id_reservation
+): bool {
+    
+    error_log("=== CHECK TIME CONFLICT ===");
+    error_log("Terrain: $id_terrain, Date: $date_reservation");
+    error_log("Horaire: $heure_debut - $heure_fin");
+    error_log("Exclure réservation ID: $id_reservation");
+    
+    // ✅ Ajouter :00 aux heures si nécessaire
+    if (strlen($heure_debut) === 5) {
+        $heure_debut .= ':00';
     }
+    if (strlen($heure_fin) === 5) {
+        $heure_fin .= ':00';
+    }
+    
+    // ✅ CORRECTION: Simplifier la requête SQL
+    $sql = "
+        SELECT COUNT(*) AS count 
+        FROM Reservation 
+        WHERE id_terrain = :id_terrain
+        AND date_reservation = :date_reservation
+        AND statut NOT IN ('Annulée')
+        AND id_reservation != :id_reservation
+        AND (
+            (heure_debut < :heure_fin AND heure_fin > :heure_debut)
+        )
+    ";
+
+    try {
+        $this->db->query($sql);
+        $this->db->bindValue(':id_terrain', $id_terrain, PDO::PARAM_INT);
+        $this->db->bindValue(':date_reservation', $date_reservation, PDO::PARAM_STR);
+        $this->db->bindValue(':heure_debut', $heure_debut, PDO::PARAM_STR);
+        $this->db->bindValue(':heure_fin', $heure_fin, PDO::PARAM_STR);
+        $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+        
+        $result = $this->db->result();
+        
+        $hasConflict = $result && $result->count > 0;
+        
+        error_log("Conflits trouvés: " . ($result ? $result->count : 'NULL'));
+        error_log("Résultat: " . ($hasConflict ? "CONFLIT" : "PAS DE CONFLIT"));
+        
+        if ($hasConflict && $result->count > 0) {
+            // ✅ DEBUG: Afficher les réservations conflictuelles
+            $debug_sql = "
+                SELECT id_reservation, heure_debut, heure_fin, statut
+                FROM Reservation 
+                WHERE id_terrain = :id_terrain
+                AND date_reservation = :date_reservation
+                AND statut NOT IN ('Annulée')
+                AND id_reservation != :id_reservation
+            ";
+            $this->db->query($debug_sql);
+            $this->db->bindValue(':id_terrain', $id_terrain, PDO::PARAM_INT);
+            $this->db->bindValue(':date_reservation', $date_reservation, PDO::PARAM_STR);
+            $this->db->bindValue(':id_reservation', $id_reservation, PDO::PARAM_INT);
+            
+            $conflicts = $this->db->results();
+            foreach ($conflicts as $conflict) {
+                error_log("  Conflit avec résa #" . $conflict->id_reservation . 
+                         " (" . $conflict->heure_debut . " - " . $conflict->heure_fin . 
+                         ") statut: " . $conflict->statut);
+            }
+        }
+        
+        return $hasConflict;
+        
+    } catch (Exception $e) {
+        error_log("❌ ERREUR SQL hasTimeConflict: " . $e->getMessage());
+        error_log("SQL: $sql");
+        return true; // En cas d'erreur, on considère qu'il y a conflit par sécurité
+    }
+}
 
 
 

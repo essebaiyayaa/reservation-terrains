@@ -1,4 +1,11 @@
-<style>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier Réservation - FootBooking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
         * {
             margin: 0;
             padding: 0;
@@ -91,6 +98,7 @@
             font-weight: 600;
             transition: all 0.3s;
             border: none;
+            cursor: pointer;
         }
 
         .btn-primary:hover {
@@ -275,19 +283,6 @@
         .btn-secondary {
             background: #e5e7eb;
             color: #1f2937;
-            flex: 1;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 1rem;
         }
 
         .btn-secondary:hover {
@@ -296,14 +291,6 @@
 
         .actions .btn-primary {
             flex: 1;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
         }
 
         footer {
@@ -340,10 +327,11 @@
             }
         }
     </style>
+</head>
+<body>
 
 
-
-<section class="page-header">
+    <section class="page-header">
         <h1><i class="fas fa-edit"></i> Modifier la Réservation</h1>
         <p>Mettez à jour les détails de votre réservation</p>
     </section>
@@ -453,7 +441,7 @@
                         <label for="commentaires">Demandes spécifiques (facultatif)</label>
                         <textarea name="commentaires" 
                                   id="commentaires" 
-                                  placeholder="Ajoutez vos commentaires ou demandes spécifiques..."><?php echo htmlspecialchars($reservation['commentaires']); ?></textarea>
+                                  placeholder="Ajoutez vos commentaires ou demandes spécifiques..."><?php echo htmlspecialchars($reservation['commentaires'] ?? ''); ?></textarea>
                     </div>
                 </div>
 
@@ -470,3 +458,5 @@
             </form>
         </div>
     </div>
+</body>
+</html>
