@@ -683,597 +683,472 @@
 </div>
 
 <script>
-  // Variables globales pour le polling
-  let pollingInterval = null;
-  let currentDate = null;
-  let currentTerrainId = null;
-  let lastBookedSlots = [];
+ // ============================================================================
+// CONFIGURATION - Adapter selon votre structure
+// ============================================================================
 
-  // Démarrer le polling automatique
-  function startSlotsPolling(terrainId, date) {
-    // Arrêter le polling précédent s'il existe
+// Calculer le chemin relatif depuis views/Client vers public/api
+const API_BASE_PATH = 'http://localhost/reservation-terrains/public/api';
+
+
+const API_CONFIG = {
+    getSlots: `${API_BASE_PATH}/get_available_slots.php`,
+    searchTerrains: `${API_BASE_PATH}/search_terrains.php`
+};
+
+// Variables globales
+let selectedTerrain = null;
+let selectedOptions = {};
+let selectedTimeSlot = null;
+let pollingInterval = null;
+let currentDate = null;
+let currentTerrainId = null;
+let lastBookedSlots = [];
+let isPollingActive = false;
+let isSubmitting = false;
+
+// Créneaux horaires (8h à 22h)
+const timeSlots = [];
+for (let hour = 8; hour < 22; hour++) {
+    timeSlots.push(`${hour.toString().padStart(2, '0')}:00:00`);
+}
+
+// ============================================================================
+// FONCTIONS DE POLLING
+// ============================================================================
+
+function startSlotsPolling(terrainId, date) {
+    if (isPollingActive && currentTerrainId === terrainId && currentDate === date) {
+        console.log('⚠️ Polling déjà actif pour ce terrain/date');
+        return;
+    }
+
     stopSlotsPolling();
-
     currentDate = date;
     currentTerrainId = terrainId;
+    isPollingActive = true;
 
-    // Charger immédiatement les créneaux
-    loadAvailableSlots(terrainId, date);
+    console.log(`🔄 Polling démarré: Terrain ${terrainId}, Date ${date}`);
+    loadAvailableSlots(terrainId, date, false);
 
-    // Puis vérifier toutes les 5 secondes
     pollingInterval = setInterval(() => {
-      checkSlotsAvailability(terrainId, date);
-    }, 5000); // 5000ms = 5 secondes
-  }
-
-  // Arrêter le polling
-  function stopSlotsPolling() {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      pollingInterval = null;
-    }
-  }
-
-  // Vérifier la disponibilité sans recharger l'interface
-  function checkSlotsAvailability(terrainId, date) {
-    fetch(`get_available_slots.php?terrain_id=${terrainId}&date=${date}`)
-      .then((response) => {
-        if (!response.ok) throw new Error("Erreur réseau");
-        return response.json();
-      })
-      .then((data) => {
-        if (data.success && data.booked_slots) {
-          // Vérifier s'il y a des changements
-          const hasChanges = checkForChanges(data.booked_slots);
-
-          if (hasChanges) {
-            // Mettre à jour l'affichage silencieusement
-            updateTimeSlotsDisplay(data.booked_slots);
-            lastBookedSlots = [...data.booked_slots];
-
-            // Vérifier si le créneau sélectionné est toujours disponible
-            if (selectedTimeSlot) {
-              const selectedValue = selectedTimeSlot.value;
-              if (data.booked_slots.includes(selectedValue)) {
-                // Le créneau sélectionné a été réservé par quelqu'un d'autre
-                showSlotUnavailableWarning();
-                selectedTimeSlot = null;
-                updateSubmitButton();
-              }
-            }
-          }
+        if (isPollingActive) {
+            checkSlotsAvailability(terrainId, date);
         }
-      })
-      .catch((error) => {
-        console.error("Erreur lors de la vérification:", error);
-        // Ne pas arrêter le polling en cas d'erreur réseau temporaire
-      });
-  }
+    }, 10000); // 10 secondes
+}
 
-  // Vérifier s'il y a des changements dans les créneaux réservés
-  function checkForChanges(newBookedSlots) {
-    if (lastBookedSlots.length !== newBookedSlots.length) {
-      return true;
+function stopSlotsPolling() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+        console.log('⏹️ Polling arrêté');
     }
+    isPollingActive = false;
+}
 
-    // Comparer les tableaux
-    for (let slot of newBookedSlots) {
-      if (!lastBookedSlots.includes(slot)) {
-        return true;
-      }
-    }
+function checkSlotsAvailability(terrainId, date) {
+    const url = `${API_CONFIG.getSlots}?terrain_id=${terrainId}&date=${date}&_=${Date.now()}`;
+    
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.booked_slots) {
+                const hasChanges = checkForChanges(data.booked_slots);
+                
+                if (hasChanges) {
+                    console.log('🔔 Nouveaux créneaux réservés détectés');
+                    updateTimeSlotsDisplay(data.booked_slots);
+                    lastBookedSlots = [...data.booked_slots];
+                    
+                    if (selectedTimeSlot && data.booked_slots.includes(selectedTimeSlot.value)) {
+                        showSlotUnavailableWarning();
+                        selectedTimeSlot = null;
+                        updateSubmitButton();
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erreur polling:', error);
+        });
+}
 
-    return false;
-  }
+function checkForChanges(newBookedSlots) {
+    if (lastBookedSlots.length !== newBookedSlots.length) return true;
+    return newBookedSlots.some(slot => !lastBookedSlots.includes(slot));
+}
 
-  // Mettre à jour l'affichage des créneaux
-  function updateTimeSlotsDisplay(bookedSlots) {
-    const timeSlotElements = document.querySelectorAll(".time-slot");
-
-    timeSlotElements.forEach((slotElement) => {
-      const radio = slotElement.querySelector('input[type="radio"]');
-      if (!radio) return;
-
-      const slotValue = radio.value;
-      const isBooked = bookedSlots.includes(slotValue);
-
-      // Mettre à jour l'état du créneau
-      if (isBooked && !slotElement.classList.contains("disabled")) {
-        // Ce créneau vient d'être réservé
-        slotElement.classList.add("disabled");
-        radio.disabled = true;
-        radio.checked = false;
-
-        // Ajouter un effet visuel subtil
-        slotElement.style.transition = "all 0.3s ease";
-        slotElement.style.opacity = "0.5";
-        setTimeout(() => {
-          slotElement.style.opacity = "1";
-        }, 300);
-      } else if (!isBooked && slotElement.classList.contains("disabled")) {
-        // Ce créneau est redevenu disponible (rare, mais possible si annulation)
-        slotElement.classList.remove("disabled");
-        radio.disabled = false;
-      }
+function updateTimeSlotsDisplay(bookedSlots) {
+    const timeSlotElements = document.querySelectorAll('.time-slot');
+    
+    timeSlotElements.forEach(slotElement => {
+        const radio = slotElement.querySelector('input[type="radio"]');
+        if (!radio) return;
+        
+        const slotValue = radio.value;
+        const isBooked = bookedSlots.includes(slotValue);
+        
+        if (isBooked && !slotElement.classList.contains('disabled')) {
+            slotElement.classList.add('disabled');
+            radio.disabled = true;
+            radio.checked = false;
+            
+            slotElement.style.transition = 'all 0.3s ease';
+            slotElement.style.opacity = '0.5';
+            setTimeout(() => slotElement.style.opacity = '1', 300);
+        } else if (!isBooked && slotElement.classList.contains('disabled')) {
+            slotElement.classList.remove('disabled');
+            radio.disabled = false;
+        }
     });
-  }
+}
 
-  // Afficher un avertissement discret si le créneau sélectionné n'est plus dispo
-  function showSlotUnavailableWarning() {
-    const container = document.getElementById("timeSlotsContainer");
-
-    // Créer un message d'avertissement temporaire
-    const warning = document.createElement("div");
+function showSlotUnavailableWarning() {
+    const container = document.getElementById('timeSlotsContainer');
+    
+    const warning = document.createElement('div');
     warning.style.cssText = `
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        color: #991b1b;
-        padding: 0.75rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+        padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;
+        font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;
         animation: slideDown 0.3s ease;
     `;
-
     warning.innerHTML = `
         <i class="fas fa-exclamation-circle"></i>
         <span>Le créneau que vous aviez sélectionné vient d'être réservé. Veuillez en choisir un autre.</span>
     `;
-
-    container.insertBefore(warning, container.firstChild);
-
-    // Retirer le message après 5 secondes
-    setTimeout(() => {
-      warning.style.animation = "slideUp 0.3s ease";
-      setTimeout(() => warning.remove(), 300);
-    }, 5000);
-  }
-
-  // Charger les créneaux disponibles (version améliorée)
-  function loadAvailableSlots(terrainId, date) {
-    fetch(`get_available_slots.php?terrain_id=${terrainId}&date=${date}`)
-      .then((response) => {
-        if (!response.ok) throw new Error("Erreur réseau");
-        return response.json();
-      })
-      .then((data) => {
-        if (data.success) {
-          displayTimeSlots(data.booked_slots || []);
-          lastBookedSlots = [...(data.booked_slots || [])];
-          selectedTimeSlot = null;
-          updateSubmitButton();
-
-          // Démarrer le polling pour cette date et ce terrain
-          startSlotsPolling(terrainId, date);
-        }
-      })
-      .catch((error) => {
-        console.error("Erreur:", error);
-        displayTimeSlots([]);
-      });
-  }
-
-  // Événement pour le changement de date
-  document.addEventListener("DOMContentLoaded", function () {
-    const dateInput = document.getElementById("dateReservation");
-    if (dateInput) {
-      dateInput.addEventListener("change", function () {
-        const date = this.value;
-        const terrainId =
-          document.getElementById("selectedTerrainId")?.value || terrainId;
-
-        if (date && terrainId) {
-          loadAvailableSlots(terrainId, date);
-        }
-      });
-    }
-
-    // Arrêter le polling quand l'utilisateur quitte la page
-    window.addEventListener("beforeunload", () => {
-      stopSlotsPolling();
-    });
-
-    // Arrêter le polling si l'onglet n'est plus visible
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        stopSlotsPolling();
-      } else if (currentDate && currentTerrainId) {
-        // Redémarrer le polling quand l'onglet redevient visible
-        startSlotsPolling(currentTerrainId, currentDate);
-      }
-    });
-  });
-
-  // Ajouter les animations CSS
-  const style = document.createElement("style");
-  style.textContent = `
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
     
-    @keyframes slideUp {
-        from {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        to {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-    }
-`;
-  // Validation du formulaire avec vérification en temps réel
-  document
-    .getElementById("reservationForm")
-    .addEventListener("submit", function (e) {
-      e.preventDefault(); // Empêcher la soumission par défaut
+    container.insertBefore(warning, container.firstChild);
+    setTimeout(() => {
+        warning.style.animation = 'slideUp 0.3s ease';
+        setTimeout(() => warning.remove(), 300);
+    }, 5000);
+}
 
-      const dateSelected = document.getElementById("dateReservation").value;
-      const terrainId =
-        document.getElementById("selectedTerrainId")?.value || terrainId;
+// ============================================================================
+// FONCTIONS DE CHARGEMENT DES DONNÉES
+// ============================================================================
 
-      // Validations de base
-      if (!terrainId) {
-        alert("Veuillez sélectionner un terrain");
-        return false;
-      }
-
-      if (!dateSelected) {
-        alert("Veuillez sélectionner une date");
-        return false;
-      }
-
-      if (!selectedTimeSlot) {
-        alert("Veuillez sélectionner un créneau horaire");
-        return false;
-      }
-
-      // Désactiver le bouton de soumission pour éviter les doubles clics
-      const submitBtn = document.getElementById("submitBtn");
-      submitBtn.disabled = true;
-      submitBtn.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> Vérification...';
-
-      // Vérifier une dernière fois que le créneau est toujours disponible
-      const selectedSlotValue = selectedTimeSlot.value;
-
-      fetch(
-        `available/slots?terrain_id=${terrainId}&date=${dateSelected}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success && data.booked_slots) {
-            // Vérifier si le créneau sélectionné est maintenant réservé
-            if (data.booked_slots.includes(selectedSlotValue)) {
-              // Le créneau vient d'être réservé
-              alert(
-                "Désolé, ce créneau vient d'être réservé par un autre utilisateur. Veuillez en choisir un autre."
-              );
-
-              // Réactiver le bouton
-              submitBtn.disabled = false;
-              submitBtn.innerHTML =
-                '<i class="fas fa-calendar-check"></i> Confirmer la réservation';
-
-              // Mettre à jour l'affichage
-              updateTimeSlotsDisplay(data.booked_slots);
-              selectedTimeSlot = null;
-              updateSubmitButton();
-
-              return false;
-            }
-
-            // Le créneau est toujours disponible, soumettre le formulaire
-            submitBtn.innerHTML =
-              '<i class="fas fa-spinner fa-spin"></i> Réservation en cours...';
-            document.getElementById("reservationForm").submit();
-          } else {
-            throw new Error("Erreur lors de la vérification");
-          }
+function loadAvailableSlots(terrainId, date, startPolling = true) {
+    if (startPolling) stopSlotsPolling();
+    
+    const url = `${API_CONFIG.getSlots}?terrain_id=${terrainId}&date=${date}&_=${Date.now()}`;
+    console.log('📡 Chargement créneaux:', url);
+    
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
         })
-        .catch((error) => {
-          console.error("Erreur:", error);
-          alert("Une erreur est survenue. Veuillez réessayer.");
+        .then(data => {
+            console.log('✅ Réponse API:', data);
+            
+            if (data.success) {
+                displayTimeSlots(data.booked_slots || []);
+                lastBookedSlots = [...(data.booked_slots || [])];
+                selectedTimeSlot = null;
+                updateSubmitButton();
 
-          // Réactiver le bouton
-          submitBtn.disabled = false;
-          submitBtn.innerHTML =
-            '<i class="fas fa-calendar-check"></i> Confirmer la réservation';
+                if (startPolling) {
+                    startSlotsPolling(terrainId, date);
+                }
+            } else {
+                console.error('❌ Erreur API:', data.message);
+                alert('Erreur: ' + data.message);
+                displayTimeSlots([]);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Erreur fetch:', error);
+            alert('Impossible de charger les créneaux. Vérifiez la console (F12).');
+            displayTimeSlots([]);
         });
+}
 
-      return false;
+function displayTimeSlots(bookedSlots) {
+    const container = document.getElementById('timeSlotsContainer');
+    let html = '<div class="time-slots">';
+
+    timeSlots.forEach(slot => {
+        const isBooked = bookedSlots.includes(slot);
+        const [hour] = slot.split(':');
+        const displayTime = `${hour}h-${parseInt(hour) + 1}h`;
+
+        html += `
+            <div class="time-slot ${isBooked ? 'disabled' : ''}">
+                <input type="radio" name="heure_debut" value="${slot}" 
+                       id="slot_${slot}" ${isBooked ? 'disabled' : ''}
+                       onchange="selectTimeSlot(this)">
+                <label for="slot_${slot}">${displayTime}</label>
+            </div>
+        `;
     });
 
-  // Fonction pour empêcher les doubles soumissions
-  let isSubmitting = false;
+    html += '</div>';
+    container.innerHTML = html;
+}
 
-  function preventDoubleSubmit(form) {
-    if (isSubmitting) {
-      return false;
-    }
-    isSubmitting = true;
+function searchTerrains() {
+    const type = document.getElementById('searchType').value;
+    const taille = document.getElementById('searchTaille').value;
+    const url = `${API_CONFIG.searchTerrains}?type=${encodeURIComponent(type)}&taille=${encodeURIComponent(taille)}`;
+    
+    console.log('🔍 Recherche terrains:', url);
 
-    // Réinitialiser après 5 secondes (au cas où il y aurait une erreur)
-    setTimeout(() => {
-      isSubmitting = false;
-    }, 5000);
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Erreur réseau');
+            return response.json();
+        })
+        .then(data => {
+            console.log('✅ Terrains trouvés:', data.length || data);
+            displayTerrains(data);
+        })
+        .catch(error => {
+            console.error('❌ Erreur:', error);
+            alert('Erreur lors de la recherche des terrains');
+        });
+}
 
-    return true;
-  }
-  document.head.appendChild(style);
-  let selectedTerrain = null;
-  let selectedOptions = {};
-  let selectedTimeSlot = null;
-  const timeSlots = [];
-
-  // Générer les créneaux horaires (8h à 22h)
-  for (let hour = 8; hour < 22; hour++) {
-    timeSlots.push(`${hour.toString().padStart(2, "0")}:00:00`);
-  }
-
-  // Rechercher les terrains
-  function searchTerrains() {
-    const type = document.getElementById("searchType").value;
-    const taille = document.getElementById("searchTaille").value;
-
-    fetch(
-      `search/terrains?type=${encodeURIComponent(
-        type
-      )}&taille=${encodeURIComponent(taille)}`
-    )
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Erreur réseau");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        displayTerrains(data);
-      })
-      .catch((error) => {
-        console.error("Erreur:", error);
-        alert("Erreur lors de la recherche des terrains");
-      });
-  }
-
-  // Afficher les terrains
-  function displayTerrains(terrains) {
-    const container = document.getElementById("terrainsList");
-    const noResults = document.getElementById("noResults");
+function displayTerrains(terrains) {
+    const container = document.getElementById('terrainsList');
+    const noResults = document.getElementById('noResults');
 
     if (!terrains || terrains.length === 0) {
-      container.classList.remove("active");
-      noResults.classList.add("active");
-      return;
+        container.classList.remove('active');
+        noResults.classList.add('active');
+        return;
     }
 
-    noResults.classList.remove("active");
-    container.classList.add("active");
+    noResults.classList.remove('active');
+    container.classList.add('active');
 
-    let html = "";
-    terrains.forEach((terrain) => {
-      html += `
-                    <div class="terrain-card" onclick="selectTerrain(${
-                      terrain.id_terrain
-                    }, '${terrain.nom_terrain}', ${terrain.prix_heure})">
-                        <input type="radio" name="terrain_radio" value="${
-                          terrain.id_terrain
-                        }">
-                        <h4>${terrain.nom_terrain}</h4>
-                        <div class="terrain-detail">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>${terrain.adresse}, ${terrain.ville}</span>
-                        </div>
-                        <div class="terrain-detail">
-                            <i class="fas fa-expand"></i>
-                            <span>${terrain.taille}</span>
-                        </div>
-                        <div class="terrain-detail">
-                            <i class="fas fa-layer-group"></i>
-                            <span>${terrain.type}</span>
-                        </div>
-                        <div class="terrain-price">${parseFloat(
-                          terrain.prix_heure
-                        ).toFixed(2)} DH/h</div>
-                    </div>
-                `;
+    let html = '';
+    terrains.forEach(terrain => {
+        html += `
+            <div class="terrain-card" onclick="selectTerrain(${terrain.id_terrain}, '${terrain.nom_terrain}', ${terrain.prix_heure})">
+                <input type="radio" name="terrain_radio" value="${terrain.id_terrain}">
+                <h4>${terrain.nom_terrain}</h4>
+                <div class="terrain-detail">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>${terrain.adresse}, ${terrain.ville}</span>
+                </div>
+                <div class="terrain-detail">
+                    <i class="fas fa-expand"></i>
+                    <span>${terrain.taille}</span>
+                </div>
+                <div class="terrain-detail">
+                    <i class="fas fa-layer-group"></i>
+                    <span>${terrain.type}</span>
+                </div>
+                <div class="terrain-price">${parseFloat(terrain.prix_heure).toFixed(2)} DH/h</div>
+            </div>
+        `;
     });
 
     container.innerHTML = html;
-  }
+}
 
-  // Sélectionner un terrain
-  function selectTerrain(id, nom, prix) {
-    // Retirer la classe selected de tous les cards
-    document.querySelectorAll(".terrain-card").forEach((card) => {
-      card.classList.remove("selected");
+// ============================================================================
+// FONCTIONS DE SÉLECTION
+// ============================================================================
+
+function selectTerrain(id, nom, prix) {
+    document.querySelectorAll('.terrain-card').forEach(card => {
+        card.classList.remove('selected');
     });
 
-    // Ajouter la classe selected au card cliqué
-    event.currentTarget.classList.add("selected");
-
-    // Cocher le radio button
+    event.currentTarget.classList.add('selected');
     event.currentTarget.querySelector('input[type="radio"]').checked = true;
 
     selectedTerrain = { id, nom, prix };
-    document.getElementById("selectedTerrainId").value = id;
-    document.getElementById("terrainPrice").textContent =
-      parseFloat(prix).toFixed(2) + " DH";
+    document.getElementById('selectedTerrainId').value = id;
+    document.getElementById('terrainPrice').textContent = parseFloat(prix).toFixed(2) + ' DH';
+    document.getElementById('reservationDetails').classList.remove('hidden');
 
-    // Afficher les détails de réservation
-    document.getElementById("reservationDetails").classList.remove("hidden");
-
-    // Réinitialiser les sélections
     selectedTimeSlot = null;
-    document.getElementById("timeSlotsContainer").innerHTML = `
-                <p style="color: #6b7280; text-align: center; padding: 2rem;">
-                    Veuillez sélectionner une date pour voir les créneaux disponibles
-                </p>
-            `;
+    document.getElementById('timeSlotsContainer').innerHTML = `
+        <p style="color: #6b7280; text-align: center; padding: 2rem;">
+            Veuillez sélectionner une date pour voir les créneaux disponibles
+        </p>
+    `;
 
     updateCart();
     updateSubmitButton();
-  }
+}
 
-  // Charger les créneaux disponibles
-  document.addEventListener("DOMContentLoaded", function () {
-    const dateInput = document.getElementById("dateReservation");
-    if (dateInput) {
-      dateInput.addEventListener("change", function () {
-        const date = this.value;
-        const terrainId = document.getElementById("selectedTerrainId").value;
-
-        if (date && terrainId) {
-          loadAvailableSlots(terrainId, date);
-        }
-      });
-    }
-  });
-
-  function loadAvailableSlots(terrainId, date) {
-    fetch(`get_available_slots.php?terrain_id=${terrainId}&date=${date}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Erreur réseau");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        displayTimeSlots(data.booked_slots || []);
-        selectedTimeSlot = null;
-        updateSubmitButton();
-      })
-      .catch((error) => {
-        console.error("Erreur:", error);
-        displayTimeSlots([]);
-      });
-  }
-
-  function displayTimeSlots(bookedSlots) {
-    const container = document.getElementById("timeSlotsContainer");
-    let html = '<div class="time-slots">';
-
-    timeSlots.forEach((slot) => {
-      const isBooked = bookedSlots.includes(slot);
-      const [hour] = slot.split(":");
-      const displayTime = `${hour}h-${parseInt(hour) + 1}h`;
-
-      html += `
-                    <div class="time-slot ${isBooked ? "disabled" : ""}">
-                        <input type="radio" 
-                               name="heure_debut" 
-                               value="${slot}" 
-                               id="slot_${slot}" 
-                               ${isBooked ? "disabled" : ""}
-                               onchange="selectTimeSlot(this)">
-                        <label for="slot_${slot}">${displayTime}</label>
-                    </div>
-                `;
-    });
-
-    html += "</div>";
-    container.innerHTML = html;
-  }
-
-  function selectTimeSlot(radio) {
+function selectTimeSlot(radio) {
     selectedTimeSlot = radio;
     updateSubmitButton();
-  }
+}
 
-  function toggleOption(element, optionId, price) {
+function toggleOption(element, optionId, price) {
     const checkbox = element.querySelector('input[type="checkbox"]');
     checkbox.checked = !checkbox.checked;
 
     if (checkbox.checked) {
-      selectedOptions[optionId] = {
-        price: price,
-        name: element.querySelector(".option-name").textContent,
-      };
-      element.classList.add("selected");
+        selectedOptions[optionId] = {
+            price: price,
+            name: element.querySelector('.option-name').textContent
+        };
+        element.classList.add('selected');
     } else {
-      delete selectedOptions[optionId];
-      element.classList.remove("selected");
+        delete selectedOptions[optionId];
+        element.classList.remove('selected');
     }
 
     updateCart();
-  }
+}
 
-  function updateCart() {
-    const optionsCart = document.getElementById("optionsCart");
-    let html = "";
+function updateCart() {
+    const optionsCart = document.getElementById('optionsCart');
+    let html = '';
     let optionsTotal = 0;
 
-    // Mettre à jour les options dans le panier
     for (const [optionId, option] of Object.entries(selectedOptions)) {
-      optionsTotal += parseFloat(option.price);
-
-      html += `
-                    <div class="cart-item">
-                        <span class="cart-item-name">${option.name}</span>
-                        <span class="cart-item-price">${parseFloat(
-                          option.price
-                        ).toFixed(2)} DH</span>
-                    </div>
-                `;
+        optionsTotal += parseFloat(option.price);
+        html += `
+            <div class="cart-item">
+                <span class="cart-item-name">${option.name}</span>
+                <span class="cart-item-price">${parseFloat(option.price).toFixed(2)} DH</span>
+            </div>
+        `;
     }
 
     optionsCart.innerHTML = html;
 
-    // Calculer le total
     const terrainPrice = selectedTerrain ? selectedTerrain.prix : 0;
     const total = terrainPrice + optionsTotal;
-    document.getElementById("totalPrice").textContent =
-      total.toFixed(2) + " DH";
-  }
+    document.getElementById('totalPrice').textContent = total.toFixed(2) + ' DH';
+}
 
-  function updateSubmitButton() {
-    const submitBtn = document.getElementById("submitBtn");
-    const dateSelected = document.getElementById("dateReservation").value;
+function updateSubmitButton() {
+    const submitBtn = document.getElementById('submitBtn');
+    const dateSelected = document.getElementById('dateReservation').value;
 
     if (selectedTerrain && dateSelected && selectedTimeSlot) {
-      submitBtn.disabled = false;
+        submitBtn.disabled = false;
     } else {
-      submitBtn.disabled = true;
+        submitBtn.disabled = true;
     }
-  }
+}
 
-  // Validation du formulaire
-  document
-    .getElementById("reservationForm")
-    .addEventListener("submit", function (e) {
-      if (!selectedTerrain) {
-        e.preventDefault();
-        alert("Veuillez sélectionner un terrain");
-        return;
-      }
+// ============================================================================
+// GESTION DU FORMULAIRE
+// ============================================================================
 
-      const dateSelected = document.getElementById("dateReservation").value;
-      if (!dateSelected) {
-        e.preventDefault();
-        alert("Veuillez sélectionner une date");
-        return;
-      }
+function handleFormSubmit(e) {
+    e.preventDefault();
 
-      if (!selectedTimeSlot) {
-        e.preventDefault();
-        alert("Veuillez sélectionner un créneau horaire");
-        return;
-      }
+    const dateSelected = document.getElementById('dateReservation').value;
+    const terrainId = document.getElementById('selectedTerrainId').value;
+
+    if (!terrainId || !dateSelected || !selectedTimeSlot) {
+        alert('Veuillez remplir tous les champs requis');
+        return false;
+    }
+
+    if (isSubmitting) return false;
+    isSubmitting = true;
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Vérification...';
+
+    const selectedSlotValue = selectedTimeSlot.value;
+    const url = `${API_CONFIG.getSlots}?terrain_id=${terrainId}&date=${dateSelected}&_=${Date.now()}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.booked_slots) {
+                if (data.booked_slots.includes(selectedSlotValue)) {
+                    alert('Désolé, ce créneau vient d\'être réservé. Veuillez en choisir un autre.');
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirmer la réservation';
+                    isSubmitting = false;
+                    
+                    updateTimeSlotsDisplay(data.booked_slots);
+                    selectedTimeSlot = null;
+                    updateSubmitButton();
+                    return false;
+                }
+                
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Réservation en cours...';
+                document.getElementById('reservationForm').submit();
+            } else {
+                throw new Error('Erreur lors de la vérification');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+            
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirmer la réservation';
+            isSubmitting = false;
+        });
+
+    return false;
+}
+
+// ============================================================================
+// INITIALISATION
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initialisation du système de réservation');
+    console.log('📂 Chemins API:', API_CONFIG);
+    
+    const dateInput = document.getElementById('dateReservation');
+    if (dateInput) {
+        dateInput.addEventListener('change', function() {
+            const date = this.value;
+            const terrainId = document.getElementById('selectedTerrainId').value;
+            
+            if (date && terrainId) {
+                loadAvailableSlots(terrainId, date);
+            }
+        });
+    }
+
+    const form = document.getElementById('reservationForm');
+    if (form) {
+        form.addEventListener('submit', handleFormSubmit);
+    }
+
+    window.addEventListener('beforeunload', () => stopSlotsPolling());
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stopSlotsPolling();
+        } else if (currentDate && currentTerrainId) {
+            startSlotsPolling(currentTerrainId, currentDate);
+        }
     });
 
-  // Initialiser
-  document.addEventListener("DOMContentLoaded", function () {
     updateCart();
     updateSubmitButton();
-  });
+    
+    console.log('✅ Initialisation terminée');
+});
+
+// Animations CSS
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideUp {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
+    }
+`;
+document.head.appendChild(style);
 </script>

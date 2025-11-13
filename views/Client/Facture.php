@@ -346,33 +346,44 @@
       </div>
     </div>
 
-    <!-- Informations client -->
-    <div class="section">
-      <h3 class="section-title">
-        <i class="fas fa-user"></i>
-        Informations client
-      </h3>
-      <div class="info-grid">
-        <div class="info-item">
-          <div class="info-label">Nom complet</div>
-          <div class="info-value">
-            <?php echo htmlspecialchars($reservation['prenom'] . ' ' . $reservation['nom']); ?>
-          </div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Email</div>
-          <div class="info-value">
-            <?php echo htmlspecialchars($reservation['email']); ?>
-          </div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Téléphone</div>
-          <div class="info-value">
-            <?php echo htmlspecialchars($reservation['telephone'] ?? 'Non renseigné'); ?>
-          </div>
-        </div>
+ 
+<!-- Informations client -->
+<div class="section">
+  <h3 class="section-title">
+    <i class="fas fa-user"></i>
+    Informations client
+  </h3>
+  <div class="info-grid">
+    <div class="info-item">
+      <div class="info-label">Nom complet</div>
+      <div class="info-value">
+        <?php 
+        $prenom = $reservation['prenom'] ?? ($currentUser->prenom ?? 'N/A');
+        $nom = $reservation['nom'] ?? ($currentUser->nom ?? 'N/A');
+        echo htmlspecialchars($prenom . ' ' . $nom); 
+        ?>
       </div>
     </div>
+    <div class="info-item">
+      <div class="info-label">Email</div>
+      <div class="info-value">
+        <?php 
+        $email = $reservation['email'] ?? ($currentUser->email ?? 'N/A');
+        echo htmlspecialchars($email); 
+        ?>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Téléphone</div>
+      <div class="info-value">
+        <?php 
+        $telephone = $reservation['telephone'] ?? ($currentUser->telephone ?? 'Non renseigné');
+        echo htmlspecialchars($telephone); 
+        ?>
+      </div>
+    </div>
+  </div>
+</div>
 
     <!-- Details de la facturation -->
     <div class="section">
@@ -469,15 +480,21 @@
     </div>
     <?php endif; ?>
 
-    <!-- Actions -->
-    <div class="actions">
-      <form method="POST" style="display: inline">
-        <button type="submit" name="download_pdf" class="btn btn-primary">
-          <i class="fas fa-download"></i>
-          Télécharger la facture (PDF)
-        </button>
-      </form>
-     
-    </div>
+  <!-- Actions -->
+<div class="actions">
+  <form method="POST" style="display: inline">
+    <button type="submit" name="download_pdf" class="btn btn-primary">
+      <i class="fas fa-download"></i>
+      Télécharger la facture (PDF)
+    </button>
+  </form>
+
+  <!-- Nouveau bouton pour accéder à Mes réservations -->
+  <a href="mes-reservations" class="btn btn-secondary">
+    <i class="fas fa-list"></i>
+    Mes réservations
+  </a>
+</div>
+
   </div>
 </div>
