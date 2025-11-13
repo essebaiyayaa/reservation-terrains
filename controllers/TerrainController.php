@@ -209,115 +209,204 @@ public function create(): void
      * @param string $id Terrain ID
      * @return void
      */
-    public function edit(string $id): void
-    {
-        // Check authentication
-        if (!$this->currentUser) {
-            http_response_code(403);
-            $this->renderView('Errors/403', [], 'Accès interdit');
-            return;
-        }
-
-        $terrain = $this->terrainModel->getById($id);
-        
-        if (!$terrain) {
-            $this->renderView('Errors/404', [], '404 - Terrain non trouvé');
-            return;
-        }
-
-        // Check permissions
-        $isAdmin = $this->currentUser->role === 'admin';
-        
-        // Support terrain returned as object or array
-        $terrainOwnerId = is_object($terrain) ? $terrain->id_utilisateur : 
-                         (is_array($terrain) ? ($terrain['id_utilisateur'] ?? null) : null);
-        
-        $isGerant = $this->currentUser->role === 'gerant_terrain' && 
-                    $terrainOwnerId == $this->currentUser->user_id;
-
-        if (!$isAdmin && !$isGerant) {
-            http_response_code(403);
-            $this->renderView('Errors/403', [], 'Accès interdit');
-            return;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            $options = $this->optionModel->getByTerrainId($id);
-            
-            $this->renderView('Terrain/Edit', [
-                'terrain' => $terrain,
-                'options' => $options ?: [],
-                'isAdmin' => $isAdmin,
-                'currentUser' => $this->currentUser
-            ], 'Modifier le Terrain');
-            return;
-        }
-
-        // Handle POST request
-        $errors = [];
-        $updateData = [];
-
-        // Gerants can only update certain fields
-        if ($isGerant) {
-            $updateData = [
-                'nom_terrain' => htmlspecialchars(trim($_POST['nom_terrain'] ?? '')),
-                'adresse' => htmlspecialchars(trim($_POST['adresse'] ?? '')),
-                'prix_heure' => floatval($_POST['prix_heure'] ?? 0)
-            ];
-
-            if (empty($updateData['nom_terrain'])) $errors[] = "Le nom est obligatoire";
-            if (empty($updateData['adresse'])) $errors[] = "L'adresse est obligatoire";
-            if ($updateData['prix_heure'] <= 0) $errors[] = "Le prix doit être supérieur à 0";
-        } 
-        // Admins can update all fields
-        else if ($isAdmin) {
-            $updateData = [
-                'nom_terrain' => htmlspecialchars(trim($_POST['nom_terrain'] ?? '')),
-                'adresse' => htmlspecialchars(trim($_POST['adresse'] ?? '')),
-                'ville' => htmlspecialchars(trim($_POST['ville'] ?? '')),
-                'taille' => $_POST['taille'] ?? '',
-                'type' => $_POST['type'] ?? '',
-                'prix_heure' => floatval($_POST['prix_heure'] ?? 0),
-                'id_utilisateur' => !empty($_POST['id_gerant']) ? intval($_POST['id_gerant']) : null
-            ];
-
-            if (empty($updateData['nom_terrain'])) $errors[] = "Le nom est obligatoire";
-            if (empty($updateData['adresse'])) $errors[] = "L'adresse est obligatoire";
-            if (empty($updateData['ville'])) $errors[] = "La ville est obligatoire";
-            if ($updateData['prix_heure'] <= 0) $errors[] = "Le prix doit être supérieur à 0";
-        }
-
-        if (!empty($errors)) {
-            $options = $this->optionModel->getByTerrainId($id);
-            
-            $this->renderView('Terrain/Edit', [
-                'terrain' => $terrain,
-                'options' => $options ?: [],
-                'errors' => $errors,
-                'isAdmin' => $isAdmin,
-                'currentUser' => $this->currentUser
-            ], 'Modifier le Terrain');
-            return;
-        }
-
-        if ($this->terrainModel->update($id, $updateData)) {
-            $_SESSION['success'] = "Terrain modifié avec succès !";
-            header("Location: /terrain/id/$id");
-            exit;
-        } else {
-            $errors[] = "Erreur lors de la modification";
-            $options = $this->optionModel->getByTerrainId($id);
-            
-            $this->renderView('Terrain/Edit', [
-                'terrain' => $terrain,
-                'options' => $options ?: [],
-                'errors' => $errors,
-                'isAdmin' => $isAdmin,
-                'currentUser' => $this->currentUser
-            ], 'Modifier le Terrain');
-        }
+   /**
+ * Show edit form (Gerant for their terrain, Admin for all)
+ * 
+ * @param string $id Terrain ID
+ * @return void
+ */
+/**
+ * Show edit form (Gerant for their terrain, Admin for all)
+ * 
+ * @param string $id Terrain ID
+ * @return void
+ */
+public function edit(string $id): void
+{
+    error_log("=== EDIT TERRAIN START ===");
+    error_log("Terrain ID: $id");
+    error_log("Request Method: " . $_SERVER['REQUEST_METHOD']);
+    
+    // Check authentication
+    if (!$this->currentUser) {
+        error_log("ERROR: User not authenticated");
+        http_response_code(403);
+        $this->renderView('Errors/403', [], 'Accès interdit');
+        return;
     }
 
+    $terrain = $this->terrainModel->getById($id);
+    
+    if (!$terrain) {
+        error_log("ERROR: Terrain not found with ID: $id");
+        $this->renderView('Errors/404', [], '404 - Terrain non trouvé');
+        return;
+    }
+
+    // Check permissions
+    $isAdmin = $this->currentUser->role === 'admin';
+    
+    // Support terrain returned as object or array
+    $terrainOwnerId = is_object($terrain) ? $terrain->id_utilisateur : 
+                     (is_array($terrain) ? ($terrain['id_utilisateur'] ?? null) : null);
+    
+    $isGerant = $this->currentUser->role === 'gerant_terrain' && 
+                $terrainOwnerId == $this->currentUser->user_id;
+
+    error_log("Is Admin: " . ($isAdmin ? 'YES' : 'NO'));
+    error_log("Is Gerant: " . ($isGerant ? 'YES' : 'NO'));
+    error_log("Terrain Owner ID: $terrainOwnerId");
+    error_log("Current User ID: " . $this->currentUser->user_id);
+
+    if (!$isAdmin && !$isGerant) {
+        error_log("ERROR: User doesn't have permission");
+        http_response_code(403);
+        $this->renderView('Errors/403', [], 'Accès interdit');
+        return;
+    }
+
+    // GET Request - Show form
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        error_log("Displaying edit form");
+        $options = $this->optionModel->getByTerrainId($id);
+        
+        // Load gerants for admin
+        $gerants = [];
+        if ($isAdmin) {
+            /** @var UserModel $userModel */
+            $userModel = $this->loadModel('UserModel');
+            $gerants = $userModel->getAllByRole('gerant_terrain');
+        }
+        
+        $this->renderView('Terrain/Edit', [
+            'terrain' => $terrain,
+            'options' => $options ?: [],
+            'gerants' => $gerants,
+            'isAdmin' => $isAdmin,
+            'currentUser' => $this->currentUser
+        ], 'Modifier le Terrain');
+        return;
+    }
+
+    // POST Request - Handle form submission
+    error_log("Processing form submission");
+    error_log("POST data: " . print_r($_POST, true));
+    
+    $errors = [];
+    $updateData = [];
+
+    // Gerants can only update certain fields
+    if ($isGerant) {
+        error_log("Processing as GERANT");
+        
+        $nom_terrain = trim($_POST['nom_terrain'] ?? '');
+        $adresse = trim($_POST['adresse'] ?? '');
+        $prix_heure = floatval($_POST['prix_heure'] ?? 0);
+        
+        $updateData = [
+            'nom_terrain' => htmlspecialchars($nom_terrain),
+            'adresse' => htmlspecialchars($adresse),
+            'prix_heure' => $prix_heure
+        ];
+
+        if (empty($nom_terrain)) $errors[] = "Le nom est obligatoire";
+        if (empty($adresse)) $errors[] = "L'adresse est obligatoire";
+        if ($prix_heure <= 0) $errors[] = "Le prix doit être supérieur à 0";
+    } 
+    // Admins can update all fields
+    else if ($isAdmin) {
+        error_log("Processing as ADMIN");
+        
+        $nom_terrain = trim($_POST['nom_terrain'] ?? '');
+        $adresse = trim($_POST['adresse'] ?? '');
+        $ville = trim($_POST['ville'] ?? '');
+        $taille = $_POST['taille'] ?? '';
+        $type = $_POST['type'] ?? '';
+        $prix_heure = floatval($_POST['prix_heure'] ?? 0);
+        $id_gerant = !empty($_POST['id_gerant']) ? intval($_POST['id_gerant']) : null;
+        
+        $updateData = [
+            'nom_terrain' => htmlspecialchars($nom_terrain),
+            'adresse' => htmlspecialchars($adresse),
+            'ville' => htmlspecialchars($ville),
+            'taille' => $taille,
+            'type' => $type,
+            'prix_heure' => $prix_heure,
+            'id_utilisateur' => $id_gerant
+        ];
+
+        if (empty($nom_terrain)) $errors[] = "Le nom est obligatoire";
+        if (empty($adresse)) $errors[] = "L'adresse est obligatoire";
+        if (empty($ville)) $errors[] = "La ville est obligatoire";
+        if (empty($taille)) $errors[] = "La taille est obligatoire";
+        if (empty($type)) $errors[] = "Le type est obligatoire";
+        if ($prix_heure <= 0) $errors[] = "Le prix doit être supérieur à 0";
+    }
+
+    error_log("Update data: " . print_r($updateData, true));
+    error_log("Errors: " . print_r($errors, true));
+
+    // If validation errors, show form again with errors
+    if (!empty($errors)) {
+        error_log("Validation failed, showing form with errors");
+        $options = $this->optionModel->getByTerrainId($id);
+        
+        // Load gerants for admin
+        $gerants = [];
+        if ($isAdmin) {
+            /** @var UserModel $userModel */
+            $userModel = $this->loadModel('UserModel');
+            $gerants = $userModel->getAllByRole('gerant_terrain');
+        }
+        
+        $this->renderView('Terrain/Edit', [
+            'terrain' => $terrain,
+            'options' => $options ?: [],
+            'gerants' => $gerants,
+            'errors' => $errors,
+            'isAdmin' => $isAdmin,
+            'currentUser' => $this->currentUser
+        ], 'Modifier le Terrain');
+        return;
+    }
+
+    // Perform update
+    error_log("Attempting database update");
+    if ($this->terrainModel->update($id, $updateData)) {
+        error_log("Update successful");
+        $_SESSION['success'] = "Terrain modifié avec succès !";
+        
+        // Redirect to admin terrains page if admin, or gerant dashboard if gerant
+        if ($isAdmin) {
+            UrlHelper::redirect('admin/terrains');
+        } else {
+            UrlHelper::redirect('gerant/terrains');
+        }
+    } else {
+        error_log("Update failed");
+        $errors[] = "Erreur lors de la modification du terrain";
+        $options = $this->optionModel->getByTerrainId($id);
+        
+        // Load gerants for admin
+        $gerants = [];
+        if ($isAdmin) {
+            /** @var UserModel $userModel */
+            $userModel = $this->loadModel('UserModel');
+            $gerants = $userModel->getAllByRole('gerant_terrain');
+        }
+        
+        $this->renderView('Terrain/Edit', [
+            'terrain' => $terrain,
+            'options' => $options ?: [],
+            'gerants' => $gerants,
+            'errors' => $errors,
+            'isAdmin' => $isAdmin,
+            'currentUser' => $this->currentUser
+        ], 'Modifier le Terrain');
+    }
+    
+    error_log("=== EDIT TERRAIN END ===");
+}
     /**
      * Delete terrain (Admin only)
      * Returns JSON response
