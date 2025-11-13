@@ -208,51 +208,6 @@
             border-left: 4px solid #16a34a;
         }
 
-        .actions {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: #16a34a;
-            color: white;
-            flex: 1;
-        }
-
-        .btn-primary:hover {
-            background: #15803d;
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: #3b82f6;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #2563eb;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-        }
-
         @media (max-width: 768px) {
             .terrain-hero h1 {
                 font-size: 1.75rem;
@@ -261,15 +216,6 @@
             .price-value {
                 font-size: 2rem;
             }
-
-            .actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
         }
     </style>
 </head>
@@ -277,10 +223,11 @@
 
 
     <div class="container">
-        <a href="/terrains" class="back-btn">
-            <i class="fas fa-arrow-left"></i>
-            Retour aux terrains
-        </a>
+<a href="<?= UrlHelper::url('terrains') ?>" class="back-btn">
+    <i class="fas fa-arrow-left"></i>
+    Retour aux terrains
+</a>
+
 
         <div class="terrain-header">
             <div class="terrain-hero">
@@ -322,20 +269,6 @@
                     <div class="price-label">Prix de location</div>
                     <div class="price-value"><?= number_format($terrain->prix_heure, 0) ?> DH</div>
                     <div style="color: #6b7280; margin-top: 0.5rem;">par heure</div>
-                </div>
-
-                <div class="actions">
-                    <?php if ($currentUser): ?>
-                        <a href="/reservation/create/<?= $terrain->id_terrain ?>" class="btn btn-primary">
-                            <i class="fas fa-calendar-check"></i>
-                            Réserver maintenant
-                        </a>
-                    <?php else: ?>
-                        <a href="/login?redirect=/terrain/id/<?= $terrain->id_terrain ?>" class="btn btn-primary">
-                            <i class="fas fa-sign-in-alt"></i>
-                            Connectez-vous pour réserver
-                        </a>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>

@@ -464,7 +464,7 @@
 
                             <div class="terrain-actions">
                                 <a href="<?= UrlHelper::url('terrain/id/' . $terrain->id_terrain) ?>" class="btn-reserve">
-                                    Voir et réserver
+                                    Voir les détails
                                 </a>
                             </div>
                         </div>
