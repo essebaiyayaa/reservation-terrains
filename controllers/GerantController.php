@@ -7,7 +7,7 @@
  * 
  * @package Controllers
  * @author  System
- * @version 1.1
+ * @version 1.2
  */
 class GerantController extends BaseController {
 
@@ -151,8 +151,8 @@ class GerantController extends BaseController {
             return;
         }
 
-        $ancienPrix = $terrain->prix_heure;
-        $nouveauPrix = $updateData['prix_heure'];
+        $ancienPrix = is_object($terrain) ? floatval($terrain->prix_heure) : floatval($terrain['prix_heure']);
+        $nouveauPrix = floatval($updateData['prix_heure']);
 
         if ($this->terrainModel->update($id, $updateData)) {
 
@@ -160,34 +160,36 @@ class GerantController extends BaseController {
             if ($nouveauPrix < $ancienPrix) {
 
                 $reduction = ($ancienPrix > 0) ? round((($ancienPrix - $nouveauPrix) / $ancienPrix) * 100, 2) : 0;
-$promoData = [
-    'id_terrain' => (int)$id,
-    'description' => "Baisse du prix de $ancienPrix à $nouveauPrix DH (-$reduction%)",
-    'pourcentage_remise' => floatval($reduction), // forcer float
-    'date_debut' => date('Y-m-d'),
-    'date_fin' => date('Y-m-d', strtotime('+7 days')),
-    'actif' => 1
-];
+                $promoData = [
+                    'id_terrain' => (int)$id,
+                    'description' => "Baisse du prix de $ancienPrix à $nouveauPrix DH (-$reduction%)",
+                    'pourcentage_remise' => floatval($reduction),
+                    'date_debut' => date('Y-m-d'),
+                    'date_fin' => date('Y-m-d', strtotime('+7 days')),
+                    'actif' => 1
+                ];
 
-$result = $this->promotionModel->add($promoData);
-if (!$result) {
-    echo "Erreur d’insertion promotion !";
-    var_dump($promoData);
-    exit;
-}
+                $result = $this->promotionModel->add($promoData);
+                if (!$result) {
+                    echo "Erreur d'insertion promotion !";
+                    var_dump($promoData);
+                    exit;
+                }
+                
                 $clients = $this->userModel->getAllClients();
+                $terrainName = is_object($terrain) ? $terrain->nom_terrain : $terrain['nom_terrain'];
 
                 foreach ($clients as $client) {
-    $subject = "🏷️ Nouvelle promotion sur le terrain {$terrain->nom_terrain}";
-    $body = "Bonjour {$client->prenom},\n\n"
-        . "Le terrain '{$terrain->nom_terrain}' vient de baisser son prix :\n"
-        . "Ancien prix : {$ancienPrix} DH\n"
-        . "Nouveau prix : {$nouveauPrix} DH\n"
-        . "Profitez de cette promotion valable jusqu'au " . date('d/m/Y', strtotime('+7 days')) . " !\n\n"
-        . "L’équipe FootBooking ⚽";
+                    $subject = "🏷️ Nouvelle promotion sur le terrain {$terrainName}";
+                    $body = "Bonjour {$client->prenom},\n\n"
+                        . "Le terrain '{$terrainName}' vient de baisser son prix :\n"
+                        . "Ancien prix : {$ancienPrix} DH\n"
+                        . "Nouveau prix : {$nouveauPrix} DH\n"
+                        . "Profitez de cette promotion valable jusqu'au " . date('d/m/Y', strtotime('+7 days')) . " !\n\n"
+                        . "L'équipe FootBooking ⚽";
 
-    Utils::sendEmail($client->email, $subject, nl2br($body));
-}
+                    Utils::sendEmail($client->email, $subject, nl2br($body));
+                }
             }
 
             $_SESSION['success'] = "Terrain modifié avec succès !";
@@ -271,6 +273,10 @@ if (!$result) {
             ], 'Gérer les Options');
         }
     }
+/**
+ * Update reservation payment status - FOR GERANT ONLY
+ * Route: gerant/update-reservation-status
+ */
 
     public function supprimerOption(string $optionId): void
     {
@@ -305,6 +311,187 @@ if (!$result) {
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Erreur lors de la suppression']);
+        }
+    }
+
+    /**
+     * View all reservations for gerant's terrains
+     */
+    public function reservations(): void
+    {
+        // Get all terrains owned by this gerant
+        $terrains = $this->terrainModel->getByGerantId($this->currentUser->user_id);
+        
+        if (empty($terrains)) {
+            $this->renderView('Gerant/Reservations', [
+                'currentUser' => $this->currentUser,
+                'reservations' => [],
+                'terrains' => [],
+                'filters' => []
+            ], 'Mes Réservations');
+            return;
+        }
+        
+        // Get filters
+        $filters = [
+            'statut' => $_GET['statut'] ?? '',
+            'date' => $_GET['date'] ?? '',
+            'terrainId' => $_GET['terrain'] ?? ''
+        ];
+        
+        // Get all reservations for gerant's terrains
+        $allReservations = [];
+        
+        foreach ($terrains as $terrain) {
+            $terrainId = is_object($terrain) ? $terrain->id_terrain : $terrain['id_terrain'];
+            $reservations = $this->reservationModel->getByTerrainId($terrainId);
+            $allReservations = array_merge($allReservations, $reservations);
+        }
+        
+        // Apply filters
+        $filteredReservations = $allReservations;
+        
+        // Filter by status
+        if (!empty($filters['statut'])) {
+            $filteredReservations = array_filter($filteredReservations, function($r) use ($filters) {
+                return $r->statut_paiement === $filters['statut'];
+            });
+        }
+        
+        // Filter by date
+        if (!empty($filters['date'])) {
+            $filteredReservations = array_filter($filteredReservations, function($r) use ($filters) {
+                return $r->date_reservation === $filters['date'];
+            });
+        }
+        
+        // Filter by terrain
+        if (!empty($filters['terrainId'])) {
+            $filteredReservations = array_filter($filteredReservations, function($r) use ($filters) {
+                return $r->id_terrain == $filters['terrainId'];
+            });
+        }
+        
+        // Sort by date descending
+        usort($filteredReservations, function($a, $b) {
+            $dateCompare = strcmp($b->date_reservation, $a->date_reservation);
+            if ($dateCompare !== 0) {
+                return $dateCompare;
+            }
+            return strcmp($b->heure_debut, $a->heure_debut);
+        });
+        
+        $this->renderView('Gerant/Reservations', [
+            'currentUser' => $this->currentUser,
+            'reservations' => $filteredReservations,
+            'terrains' => $terrains,
+            'filters' => $filters
+        ], 'Mes Réservations - Gérant');
+    }
+
+    /**
+     * Update reservation payment status - FOR GERANT ONLY
+     * Route: gerant/update-reservation-status
+     */
+    public function updateReservationStatus(): void
+    {
+        // Only accept POST requests
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
+            return;
+        }
+        
+        // Get JSON input
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($input['id']) || !isset($input['status'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Paramètres manquants']);
+            return;
+        }
+        
+        $reservationId = $input['id'];
+        $newStatus = $input['status'];
+        
+        // Validate status - ONLY PAYMENT STATUS
+        $validStatuses = ['paye', 'en_attente', 'annule'];
+        if (!in_array($newStatus, $validStatuses)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Statut invalide']);
+            return;
+        }
+        
+        // Get reservation
+        $reservation = $this->reservationModel->getById($reservationId);
+        
+        if (!$reservation) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Réservation non trouvée']);
+            return;
+        }
+        
+        // Verify ownership of the terrain
+        $terrain = $this->terrainModel->getById($reservation->id_terrain);
+        
+        if (!$terrain) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Terrain non trouvé']);
+            return;
+        }
+        
+        $terrainOwnerId = is_object($terrain) ? $terrain->id_utilisateur : $terrain['id_utilisateur'];
+        
+        if ($terrainOwnerId != $this->currentUser->user_id) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Vous ne pouvez modifier que les réservations de vos propres terrains']);
+            return;
+        }
+        
+        // Update status
+        if ($this->reservationModel->updateStatus($reservationId, $newStatus)) {
+            // Send email notification to client
+            try {
+                $client = $this->userModel->getById($reservation->id_utilisateur);
+                
+                if ($client && !empty($client->email)) {
+                    $clientPrenom = is_object($client) ? $client->prenom : $client['prenom'];
+                    $clientEmail = is_object($client) ? $client->email : $client['email'];
+                    
+                    $statusLabel = match($newStatus) {
+                        'paye' => 'confirmée et payée',
+                        'annule' => 'annulée',
+                        'en_attente' => 'en attente de paiement',
+                        default => 'mise à jour'
+                    };
+                    
+                    $subject = "Mise à jour de votre réservation #" . $reservationId;
+                    $body = "Bonjour {$clientPrenom},\n\n" .
+                           "Le statut de votre réservation pour le terrain '{$reservation->nom_terrain}' " .
+                           "le " . date('d/m/Y', strtotime($reservation->date_reservation)) . " " .
+                           "a été mis à jour : {$statusLabel}.\n\n" .
+                           "Pour plus de détails, consultez votre espace personnel.\n\n" .
+                           "Cordialement,\n" .
+                           "L'équipe FootBooking";
+                    
+                    Utils::sendEmail($clientEmail, $subject, nl2br($body));
+                }
+            } catch (Exception $e) {
+                error_log("Erreur envoi email notification: " . $e->getMessage());
+                // Continue even if email fails
+            }
+            
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Statut mis à jour avec succès',
+                'new_status' => $newStatus
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Erreur lors de la mise à jour du statut'
+            ]);
         }
     }
 }
