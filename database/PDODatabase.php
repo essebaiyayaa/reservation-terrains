@@ -119,9 +119,14 @@ class PDODatabase {
      * @param int $type The PDO data type (e.g., PDO::PARAM_INT, PDO::PARAM_STR).
      * @return void
      */
-    public function bindValue(string $param, $value, ?int $type = null): void {
-        $this->stmt->bindValue($param, $value, $type);
+public function bindValue($param, $value, ?int $type = null): void {
+    // Si le paramètre est numérique, il faut qu’il soit un entier, pas une chaîne
+    if (is_numeric($param)) {
+        $param = (int)$param;
     }
+    $this->stmt->bindValue($param, $value, $type ?? PDO::PARAM_STR);
+}
+
 
     /**
      * Executes the prepared SQL statement.

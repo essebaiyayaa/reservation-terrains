@@ -147,4 +147,21 @@ class OptionSupplementaireModel extends BaseModel
             return [];
         }
     }
+    // Dans OptionSupplementaireModel
+public function getOptionsByReservation(int $reservationId): array
+{
+    $sql = "
+        SELECT o.*
+        FROM OptionReservation orr
+        JOIN OptionSupplementaire o ON orr.id_option = o.id_option
+        WHERE orr.id_reservation = :reservation_id
+    ";
+
+    $this->db->query($sql);
+    $this->db->bindValue(':reservation_id', $reservationId, PDO::PARAM_INT);
+    $results = $this->db->results(); // tableau d'objets
+
+    return $results;
+}
+
 }
