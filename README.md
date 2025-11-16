@@ -227,7 +227,7 @@ JWT_EXPIRY_MINUTES=3600
 - Set DEBUG_MODE=false in production environment
 - Use strong database passwords in production
 
-## 📖 Usage
+##  Usage
 
 ### For Clients
 1. **Register/Login** to the system
@@ -277,3 +277,4 @@ JWT_EXPIRY_MINUTES=3600
 - **ELMESSAOUDI Fatima** - Frontend Lead
 - **CHOUHE Jihane** - Developer
 - **BENKRIMEN Wiam** - Developer
+
